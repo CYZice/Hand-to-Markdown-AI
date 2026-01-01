@@ -1,4 +1,5 @@
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
+import { MODEL_CATEGORIES } from "../constants";
 import type HandMarkdownAIPlugin from "../main";
 
 /**
@@ -16,11 +17,14 @@ export class SimpleSettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
+        this.ensureCurrentModelValid();
+
         // 标题和状态
         this.addHeader(containerEl);
 
-        // 核心配置
-        this.addModelConfig(containerEl);
+        // 供应商与模型
+        this.addProviderSection(containerEl);
+        this.addModelSection(containerEl);
         this.addPdfSettings(containerEl);
         this.addOutputSettings(containerEl);
         this.addPromptSettings(containerEl);
@@ -64,21 +68,140 @@ export class SimpleSettingsTab extends PluginSettingTab {
         containerEl.createEl("hr");
     }
 
-    private addModelConfig(containerEl: HTMLElement) {
-        containerEl.createEl("h3", { text: "🤖 AI 模型" });
+    private addProviderSection(containerEl: HTMLElement) {
+        containerEl.createEl("h3", { text: "🌐 提供商" });
 
-        // 模型选择
-        const enabledModels = Object.entries(this.plugin.settings.models)
-            .filter(([_, config]) => config.enabled);
+        const table = containerEl.createEl("table", { attr: { style: "width: 100%; border-collapse: collapse; margin-top: 6px;" } });
+        const thead = table.createEl("thead").createEl("tr");
+        ["ID", "Type", "Base URL", "API Key", "启用", "操作"].forEach(text => {
+            thead.createEl("th", { text, attr: { style: "text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);" } });
+        });
+
+        const tbody = table.createEl("tbody");
+        Object.entries(this.plugin.settings.providers).forEach(([id, provider]) => {
+            const row = tbody.createEl("tr");
+            const cellStyle = "padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);";
+
+            row.createEl("td", { text: id, attr: { style: cellStyle } });
+            row.createEl("td", { text: provider.type || "openai", attr: { style: cellStyle } });
+            row.createEl("td", { text: provider.baseUrl || "-", attr: { style: cellStyle } });
+            row.createEl("td", { text: provider.apiKey ? "••••" : "未配置", attr: { style: cellStyle + " color: var(--text-muted);" } });
+
+            const enabledCell = row.createEl("td", { attr: { style: cellStyle } });
+            const toggle = enabledCell.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+            toggle.checked = provider.enabled;
+            toggle.onchange = async () => {
+                provider.enabled = toggle.checked;
+                await this.plugin.saveSettings();
+            };
+
+            const actionsCell = row.createEl("td", { attr: { style: cellStyle } });
+            const editBtn = actionsCell.createEl("button", { text: "编辑" });
+            editBtn.onclick = () => this.showProviderModal("edit", id);
+            const deleteBtn = actionsCell.createEl("button", { text: "删除", attr: { style: "margin-left: 6px;" } });
+            deleteBtn.onclick = async () => {
+                if (Object.keys(this.plugin.settings.providers).length <= 1) {
+                    new Notice("至少需要保留一个提供商");
+                    return;
+                }
+                if (confirm(`确定删除提供商 ${id} ？将同时移除其下的模型。`)) {
+                    Object.entries(this.plugin.settings.models).forEach(([modelId, model]) => {
+                        if (model.provider === id) {
+                            delete this.plugin.settings.models[modelId];
+                        }
+                    });
+                    delete this.plugin.settings.providers[id];
+                    this.ensureCurrentModelValid();
+                    await this.plugin.saveSettings();
+                    this.display();
+                }
+            };
+        });
+
+        const addBtnWrap = containerEl.createDiv({ attr: { style: "margin-top: 10px;" } });
+        const addBtn = addBtnWrap.createEl("button", { text: "+ 添加提供商" });
+        addBtn.onclick = () => this.showProviderModal("add");
+
+        containerEl.createEl("hr");
+    }
+
+    private addModelSection(containerEl: HTMLElement) {
+        containerEl.createEl("h3", { text: "🤖 模型" });
+
+        const header = containerEl.createDiv({ attr: { style: "display: flex; justify-content: space-between; align-items: center;" } });
+        const addBtn = header.createEl("button", { text: "+ 添加模型" });
+        addBtn.onclick = () => this.showModelModal("add");
+
+        const table = containerEl.createEl("table", { attr: { style: "width: 100%; border-collapse: collapse; margin-top: 8px;" } });
+        const thead = table.createEl("thead").createEl("tr");
+        ["ID", "名称", "Provider", "Model", "类别", "启用", "操作"].forEach(text => {
+            thead.createEl("th", { text, attr: { style: "text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);" } });
+        });
+
+        const tbody = table.createEl("tbody");
+        const allModels = Object.values(this.plugin.settings.models);
+
+        if (allModels.length === 0) {
+            const row = tbody.createEl("tr");
+            row.createEl("td", {
+                text: "暂无模型，点击上方添加",
+                attr: { colspan: "7", style: "padding: 10px; text-align: center; color: var(--text-muted);" }
+            });
+        } else {
+            allModels.forEach(model => {
+                const row = tbody.createEl("tr");
+                const cellStyle = "padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);";
+                row.createEl("td", { text: model.id, attr: { style: cellStyle } });
+                row.createEl("td", { text: model.name, attr: { style: cellStyle } });
+                row.createEl("td", { text: model.provider, attr: { style: cellStyle } });
+                row.createEl("td", { text: model.model, attr: { style: cellStyle } });
+                row.createEl("td", { text: model.category, attr: { style: cellStyle } });
+
+                const enabledCell = row.createEl("td", { attr: { style: cellStyle } });
+                const toggle = enabledCell.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+                toggle.checked = model.enabled;
+                toggle.onchange = async () => {
+                    model.enabled = toggle.checked;
+                    await this.plugin.saveSettings();
+                    this.ensureCurrentModelValid();
+                    this.display();
+                };
+
+                const actionsCell = row.createEl("td", { attr: { style: cellStyle } });
+                const editBtn = actionsCell.createEl("button", { text: "编辑" });
+                editBtn.onclick = () => this.showModelModal("edit", model.id);
+                const deleteBtn = actionsCell.createEl("button", { text: "删除", attr: { style: "margin-left: 6px;" } });
+                deleteBtn.onclick = async () => {
+                    if (confirm(`确定删除模型 ${model.name} ？`)) {
+                        delete this.plugin.settings.models[model.id];
+                        this.ensureCurrentModelValid();
+                        await this.plugin.saveSettings();
+                        this.display();
+                    }
+                };
+            });
+        }
 
         new Setting(containerEl)
-            .setName("选择模型")
-            .setDesc("用于转换的 AI 模型")
+            .setName("当前模型")
+            .setDesc("选择用于转换的模型")
             .addDropdown(dropdown => {
+                const enabledModels = Object.entries(this.plugin.settings.models)
+                    .filter(([_, config]) => config.enabled);
+
                 enabledModels.forEach(([id, config]) => {
                     dropdown.addOption(id, `${config.name} (${config.provider})`);
                 });
-                dropdown.setValue(this.plugin.settings.currentModel)
+
+                const current = this.plugin.settings.currentModel;
+                const hasCurrent = enabledModels.some(([id]) => id === current);
+                const selected = hasCurrent ? current : enabledModels[0]?.[0] || "";
+                if (!hasCurrent && selected) {
+                    this.plugin.settings.currentModel = selected;
+                    this.plugin.saveSettings();
+                }
+
+                dropdown.setValue(selected)
                     .onChange(async (value) => {
                         this.plugin.settings.currentModel = value;
                         await this.plugin.saveSettings();
@@ -86,65 +209,205 @@ export class SimpleSettingsTab extends PluginSettingTab {
                     });
             });
 
-        // 当前模型的API密钥配置
-        if (enabledModels.length > 0) {
-            const currentModel = this.plugin.settings.currentModel;
-            const modelConfig = this.plugin.settings.models[currentModel];
-            const provider = this.plugin.settings.providers[modelConfig?.provider];
-
-            if (provider) {
-                new Setting(containerEl)
-                    .setName(`${provider.name || modelConfig.provider} API Key`)
-                    .setDesc("从供应商平台获取 API 密钥")
-                    .addText(text => {
-                        text.inputEl.type = "password";
-                        text.setPlaceholder("sk-...")
-                            .setValue(provider.apiKey || "")
-                            .onChange(async (value) => {
-                                provider.apiKey = value.trim();
-                                await this.plugin.saveSettings();
-                                this.display();
-                            });
-                        text.inputEl.style.width = "100%";
-                    })
-                    .addExtraButton(btn => {
-                        btn.setIcon("eye")
-                            .setTooltip("显示/隐藏")
-                            .onClick(() => {
-                                const input = btn.extraSettingsEl.parentElement?.querySelector("input");
-                                if (input) {
-                                    input.type = input.type === "password" ? "text" : "password";
-                                }
-                            });
-                    });
-
-                // Base URL（可选）
-                if (provider.baseUrl) {
-                    new Setting(containerEl)
-                        .setName("Base URL")
-                        .setDesc("自定义 API 端点（可选）")
-                        .addText(text => text
-                            .setPlaceholder("https://api.openai.com/v1")
-                            .setValue(provider.baseUrl || "")
-                            .onChange(async (value) => {
-                                provider.baseUrl = value.trim();
-                                await this.plugin.saveSettings();
-                            })
-                        );
-                }
-            }
-        }
-
-        // 快捷链接
-        const linksDiv = containerEl.createDiv({ attr: { style: "margin-top: 10px; font-size: 0.9em;" } });
-        linksDiv.innerHTML = `
-            <span style="color: var(--text-muted);">获取 API Key：</span>
-            <a href="https://platform.openai.com/api-keys" target="_blank" style="margin-right: 10px;">OpenAI</a>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="margin-right: 10px;">Gemini</a>
-            <a href="https://console.anthropic.com/settings/keys" target="_blank">Claude</a>
-        `;
-
         containerEl.createEl("hr");
+    }
+
+    private showProviderModal(mode: "add" | "edit", providerId?: string) {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText(mode === "add" ? "添加提供商" : `编辑提供商 ${providerId}`);
+
+        const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
+
+        const provider = providerId ? this.plugin.settings.providers[providerId] : { apiKey: "", baseUrl: "", enabled: true, type: "openai", name: "" };
+
+        let idValue = providerId || "";
+
+        const idInput = new Setting(content)
+            .setName("ID")
+            .setDesc("用于引用的唯一标识")
+            .addText(text => {
+                text.setPlaceholder("my-provider")
+                    .setValue(idValue)
+                    .onChange(value => idValue = value.trim());
+                if (mode === "edit") text.setDisabled(true);
+            });
+
+        new Setting(content)
+            .setName("显示名称")
+            .addText(text => text
+                .setPlaceholder("OpenAI")
+                .setValue(provider.name || "")
+                .onChange(value => provider.name = value.trim())
+            );
+
+        new Setting(content)
+            .setName("类型")
+            .setDesc("openai 兼容类型标识")
+            .addText(text => text
+                .setPlaceholder("openai")
+                .setValue(provider.type || "openai")
+                .onChange(value => provider.type = value.trim() || "openai")
+            );
+
+        new Setting(content)
+            .setName("Base URL")
+            .setDesc("可选，OpenAI 兼容接口地址")
+            .addText(text => text
+                .setPlaceholder("https://api.openai.com/v1")
+                .setValue(provider.baseUrl || "")
+                .onChange(value => provider.baseUrl = value.trim())
+            );
+
+        new Setting(content)
+            .setName("API Key")
+            .addText(text => {
+                text.inputEl.type = "password";
+                text.setPlaceholder("sk-...")
+                    .setValue(provider.apiKey || "")
+                    .onChange(value => provider.apiKey = value.trim());
+            });
+
+        new Setting(content)
+            .setName("启用")
+            .addToggle(toggle => toggle
+                .setValue(provider.enabled)
+                .onChange(value => provider.enabled = value)
+            );
+
+        const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
+        const cancelBtn = footer.createEl("button", { text: "取消" });
+        cancelBtn.onclick = () => modal.close();
+        const saveBtn = footer.createEl("button", { text: "保存" });
+        saveBtn.onclick = async () => {
+            if (!idValue) {
+                new Notice("ID 不能为空");
+                return;
+            }
+            if (mode === "add" && this.plugin.settings.providers[idValue]) {
+                new Notice("ID 已存在");
+                return;
+            }
+            if (mode === "add") {
+                this.plugin.settings.providers[idValue] = provider;
+            } else if (providerId) {
+                this.plugin.settings.providers[providerId] = provider;
+            }
+            await this.plugin.saveSettings();
+            this.display();
+            modal.close();
+        };
+
+        modal.open();
+    }
+
+    private showModelModal(mode: "add" | "edit", modelId?: string) {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText(mode === "add" ? "添加模型" : `编辑模型 ${modelId}`);
+        const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
+
+        const model = modelId ? { ...this.plugin.settings.models[modelId] } : {
+            id: "",
+            name: "",
+            provider: Object.keys(this.plugin.settings.providers)[0] || "openai",
+            model: "",
+            enabled: true,
+            category: MODEL_CATEGORIES.TEXT
+        };
+
+        let idValue = model.id;
+
+        new Setting(content)
+            .setName("ID")
+            .setDesc("唯一标识，建议使用小写和短横线")
+            .addText(text => {
+                text.setPlaceholder("gpt-4o-mini")
+                    .setValue(idValue)
+                    .onChange(value => idValue = value.trim());
+                if (mode === "edit") text.setDisabled(true);
+            });
+
+        new Setting(content)
+            .setName("显示名称")
+            .addText(text => text
+                .setPlaceholder("GPT-4o Mini")
+                .setValue(model.name)
+                .onChange(value => model.name = value.trim())
+            );
+
+        new Setting(content)
+            .setName("Provider")
+            .addDropdown(drop => {
+                Object.keys(this.plugin.settings.providers).forEach(pid => drop.addOption(pid, pid));
+                drop.setValue(model.provider)
+                    .onChange(value => model.provider = value);
+            });
+
+        new Setting(content)
+            .setName("Model")
+            .setDesc("API 模型名称，例如 gpt-4o-mini")
+            .addText(text => text
+                .setPlaceholder("gpt-4o-mini")
+                .setValue(model.model)
+                .onChange(value => model.model = value.trim())
+            );
+
+        new Setting(content)
+            .setName("类别")
+            .addDropdown(drop => {
+                Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
+                drop.setValue(String(model.category))
+                    .onChange(value => model.category = value as any);
+            });
+
+        new Setting(content)
+            .setName("启用")
+            .addToggle(toggle => toggle
+                .setValue(model.enabled)
+                .onChange(value => model.enabled = value)
+            );
+
+        const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
+        footer.createEl("button", { text: "取消" }).onclick = () => modal.close();
+        footer.createEl("button", { text: "保存" }).onclick = async () => {
+            if (!idValue) {
+                new Notice("模型 ID 不能为空");
+                return;
+            }
+            if (!model.name) {
+                new Notice("模型名称不能为空");
+                return;
+            }
+            if (!model.model) {
+                new Notice("Model 字段不能为空");
+                return;
+            }
+            if (!this.plugin.settings.providers[model.provider]) {
+                new Notice("请选择有效的 Provider");
+                return;
+            }
+            if (mode === "add" && this.plugin.settings.models[idValue]) {
+                new Notice("模型 ID 已存在");
+                return;
+            }
+
+            const persisted = { ...model, id: idValue } as any;
+            this.plugin.settings.models[idValue] = persisted;
+            this.ensureCurrentModelValid();
+            await this.plugin.saveSettings();
+            this.display();
+            modal.close();
+        };
+
+        modal.open();
+    }
+
+    private ensureCurrentModelValid() {
+        const enabledModels = Object.entries(this.plugin.settings.models)
+            .filter(([_, m]) => m.enabled);
+        const hasCurrent = enabledModels.some(([id]) => id === this.plugin.settings.currentModel);
+        if (!hasCurrent) {
+            this.plugin.settings.currentModel = enabledModels[0]?.[0] || "";
+        }
     }
 
     private addPdfSettings(containerEl: HTMLElement) {

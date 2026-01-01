@@ -1704,6 +1704,7 @@ init_defaults();
 
 // src/ui/simple-settings-tab.ts
 var import_obsidian6 = require("obsidian");
+init_constants();
 var SimpleSettingsTab = class extends import_obsidian6.PluginSettingTab {
   plugin;
   constructor(app, plugin) {
@@ -1713,8 +1714,10 @@ var SimpleSettingsTab = class extends import_obsidian6.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
+    this.ensureCurrentModelValid();
     this.addHeader(containerEl);
-    this.addModelConfig(containerEl);
+    this.addProviderSection(containerEl);
+    this.addModelSection(containerEl);
     this.addPdfSettings(containerEl);
     this.addOutputSettings(containerEl);
     this.addPromptSettings(containerEl);
@@ -1748,58 +1751,249 @@ var SimpleSettingsTab = class extends import_obsidian6.PluginSettingTab {
     }
     containerEl.createEl("hr");
   }
-  addModelConfig(containerEl) {
-    containerEl.createEl("h3", { text: "\u{1F916} AI \u6A21\u578B" });
-    const enabledModels = Object.entries(this.plugin.settings.models).filter(([_, config]) => config.enabled);
-    new import_obsidian6.Setting(containerEl).setName("\u9009\u62E9\u6A21\u578B").setDesc("\u7528\u4E8E\u8F6C\u6362\u7684 AI \u6A21\u578B").addDropdown((dropdown) => {
+  addProviderSection(containerEl) {
+    containerEl.createEl("h3", { text: "\u{1F310} \u63D0\u4F9B\u5546" });
+    const table = containerEl.createEl("table", { attr: { style: "width: 100%; border-collapse: collapse; margin-top: 6px;" } });
+    const thead = table.createEl("thead").createEl("tr");
+    ["ID", "Type", "Base URL", "API Key", "\u542F\u7528", "\u64CD\u4F5C"].forEach((text) => {
+      thead.createEl("th", { text, attr: { style: "text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);" } });
+    });
+    const tbody = table.createEl("tbody");
+    Object.entries(this.plugin.settings.providers).forEach(([id, provider]) => {
+      const row = tbody.createEl("tr");
+      const cellStyle = "padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);";
+      row.createEl("td", { text: id, attr: { style: cellStyle } });
+      row.createEl("td", { text: provider.type || "openai", attr: { style: cellStyle } });
+      row.createEl("td", { text: provider.baseUrl || "-", attr: { style: cellStyle } });
+      row.createEl("td", { text: provider.apiKey ? "\u2022\u2022\u2022\u2022" : "\u672A\u914D\u7F6E", attr: { style: cellStyle + " color: var(--text-muted);" } });
+      const enabledCell = row.createEl("td", { attr: { style: cellStyle } });
+      const toggle = enabledCell.createEl("input", { type: "checkbox" });
+      toggle.checked = provider.enabled;
+      toggle.onchange = async () => {
+        provider.enabled = toggle.checked;
+        await this.plugin.saveSettings();
+      };
+      const actionsCell = row.createEl("td", { attr: { style: cellStyle } });
+      const editBtn = actionsCell.createEl("button", { text: "\u7F16\u8F91" });
+      editBtn.onclick = () => this.showProviderModal("edit", id);
+      const deleteBtn = actionsCell.createEl("button", { text: "\u5220\u9664", attr: { style: "margin-left: 6px;" } });
+      deleteBtn.onclick = async () => {
+        if (Object.keys(this.plugin.settings.providers).length <= 1) {
+          new import_obsidian6.Notice("\u81F3\u5C11\u9700\u8981\u4FDD\u7559\u4E00\u4E2A\u63D0\u4F9B\u5546");
+          return;
+        }
+        if (confirm(`\u786E\u5B9A\u5220\u9664\u63D0\u4F9B\u5546 ${id} \uFF1F\u5C06\u540C\u65F6\u79FB\u9664\u5176\u4E0B\u7684\u6A21\u578B\u3002`)) {
+          Object.entries(this.plugin.settings.models).forEach(([modelId, model]) => {
+            if (model.provider === id) {
+              delete this.plugin.settings.models[modelId];
+            }
+          });
+          delete this.plugin.settings.providers[id];
+          this.ensureCurrentModelValid();
+          await this.plugin.saveSettings();
+          this.display();
+        }
+      };
+    });
+    const addBtnWrap = containerEl.createDiv({ attr: { style: "margin-top: 10px;" } });
+    const addBtn = addBtnWrap.createEl("button", { text: "+ \u6DFB\u52A0\u63D0\u4F9B\u5546" });
+    addBtn.onclick = () => this.showProviderModal("add");
+    containerEl.createEl("hr");
+  }
+  addModelSection(containerEl) {
+    containerEl.createEl("h3", { text: "\u{1F916} \u6A21\u578B" });
+    const header = containerEl.createDiv({ attr: { style: "display: flex; justify-content: space-between; align-items: center;" } });
+    const addBtn = header.createEl("button", { text: "+ \u6DFB\u52A0\u6A21\u578B" });
+    addBtn.onclick = () => this.showModelModal("add");
+    const table = containerEl.createEl("table", { attr: { style: "width: 100%; border-collapse: collapse; margin-top: 8px;" } });
+    const thead = table.createEl("thead").createEl("tr");
+    ["ID", "\u540D\u79F0", "Provider", "Model", "\u7C7B\u522B", "\u542F\u7528", "\u64CD\u4F5C"].forEach((text) => {
+      thead.createEl("th", { text, attr: { style: "text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);" } });
+    });
+    const tbody = table.createEl("tbody");
+    const allModels = Object.values(this.plugin.settings.models);
+    if (allModels.length === 0) {
+      const row = tbody.createEl("tr");
+      row.createEl("td", {
+        text: "\u6682\u65E0\u6A21\u578B\uFF0C\u70B9\u51FB\u4E0A\u65B9\u6DFB\u52A0",
+        attr: { colspan: "7", style: "padding: 10px; text-align: center; color: var(--text-muted);" }
+      });
+    } else {
+      allModels.forEach((model) => {
+        const row = tbody.createEl("tr");
+        const cellStyle = "padding: 6px 4px; border-bottom: 1px solid var(--background-modifier-border);";
+        row.createEl("td", { text: model.id, attr: { style: cellStyle } });
+        row.createEl("td", { text: model.name, attr: { style: cellStyle } });
+        row.createEl("td", { text: model.provider, attr: { style: cellStyle } });
+        row.createEl("td", { text: model.model, attr: { style: cellStyle } });
+        row.createEl("td", { text: model.category, attr: { style: cellStyle } });
+        const enabledCell = row.createEl("td", { attr: { style: cellStyle } });
+        const toggle = enabledCell.createEl("input", { type: "checkbox" });
+        toggle.checked = model.enabled;
+        toggle.onchange = async () => {
+          model.enabled = toggle.checked;
+          await this.plugin.saveSettings();
+          this.ensureCurrentModelValid();
+          this.display();
+        };
+        const actionsCell = row.createEl("td", { attr: { style: cellStyle } });
+        const editBtn = actionsCell.createEl("button", { text: "\u7F16\u8F91" });
+        editBtn.onclick = () => this.showModelModal("edit", model.id);
+        const deleteBtn = actionsCell.createEl("button", { text: "\u5220\u9664", attr: { style: "margin-left: 6px;" } });
+        deleteBtn.onclick = async () => {
+          if (confirm(`\u786E\u5B9A\u5220\u9664\u6A21\u578B ${model.name} \uFF1F`)) {
+            delete this.plugin.settings.models[model.id];
+            this.ensureCurrentModelValid();
+            await this.plugin.saveSettings();
+            this.display();
+          }
+        };
+      });
+    }
+    new import_obsidian6.Setting(containerEl).setName("\u5F53\u524D\u6A21\u578B").setDesc("\u9009\u62E9\u7528\u4E8E\u8F6C\u6362\u7684\u6A21\u578B").addDropdown((dropdown) => {
+      const enabledModels = Object.entries(this.plugin.settings.models).filter(([_, config]) => config.enabled);
       enabledModels.forEach(([id, config]) => {
         dropdown.addOption(id, `${config.name} (${config.provider})`);
       });
-      dropdown.setValue(this.plugin.settings.currentModel).onChange(async (value) => {
+      const current = this.plugin.settings.currentModel;
+      const hasCurrent = enabledModels.some(([id]) => id === current);
+      const selected = hasCurrent ? current : enabledModels[0]?.[0] || "";
+      if (!hasCurrent && selected) {
+        this.plugin.settings.currentModel = selected;
+        this.plugin.saveSettings();
+      }
+      dropdown.setValue(selected).onChange(async (value) => {
         this.plugin.settings.currentModel = value;
         await this.plugin.saveSettings();
         this.display();
       });
     });
-    if (enabledModels.length > 0) {
-      const currentModel = this.plugin.settings.currentModel;
-      const modelConfig = this.plugin.settings.models[currentModel];
-      const provider = this.plugin.settings.providers[modelConfig?.provider];
-      if (provider) {
-        new import_obsidian6.Setting(containerEl).setName(`${provider.name || modelConfig.provider} API Key`).setDesc("\u4ECE\u4F9B\u5E94\u5546\u5E73\u53F0\u83B7\u53D6 API \u5BC6\u94A5").addText((text) => {
-          text.inputEl.type = "password";
-          text.setPlaceholder("sk-...").setValue(provider.apiKey || "").onChange(async (value) => {
-            provider.apiKey = value.trim();
-            await this.plugin.saveSettings();
-            this.display();
-          });
-          text.inputEl.style.width = "100%";
-        }).addExtraButton((btn) => {
-          btn.setIcon("eye").setTooltip("\u663E\u793A/\u9690\u85CF").onClick(() => {
-            const input = btn.extraSettingsEl.parentElement?.querySelector("input");
-            if (input) {
-              input.type = input.type === "password" ? "text" : "password";
-            }
-          });
-        });
-        if (provider.baseUrl) {
-          new import_obsidian6.Setting(containerEl).setName("Base URL").setDesc("\u81EA\u5B9A\u4E49 API \u7AEF\u70B9\uFF08\u53EF\u9009\uFF09").addText(
-            (text) => text.setPlaceholder("https://api.openai.com/v1").setValue(provider.baseUrl || "").onChange(async (value) => {
-              provider.baseUrl = value.trim();
-              await this.plugin.saveSettings();
-            })
-          );
-        }
-      }
-    }
-    const linksDiv = containerEl.createDiv({ attr: { style: "margin-top: 10px; font-size: 0.9em;" } });
-    linksDiv.innerHTML = `
-            <span style="color: var(--text-muted);">\u83B7\u53D6 API Key\uFF1A</span>
-            <a href="https://platform.openai.com/api-keys" target="_blank" style="margin-right: 10px;">OpenAI</a>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="margin-right: 10px;">Gemini</a>
-            <a href="https://console.anthropic.com/settings/keys" target="_blank">Claude</a>
-        `;
     containerEl.createEl("hr");
+  }
+  showProviderModal(mode, providerId) {
+    const modal = new import_obsidian6.Modal(this.app);
+    modal.titleEl.setText(mode === "add" ? "\u6DFB\u52A0\u63D0\u4F9B\u5546" : `\u7F16\u8F91\u63D0\u4F9B\u5546 ${providerId}`);
+    const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
+    const provider = providerId ? this.plugin.settings.providers[providerId] : { apiKey: "", baseUrl: "", enabled: true, type: "openai", name: "" };
+    let idValue = providerId || "";
+    const idInput = new import_obsidian6.Setting(content).setName("ID").setDesc("\u7528\u4E8E\u5F15\u7528\u7684\u552F\u4E00\u6807\u8BC6").addText((text) => {
+      text.setPlaceholder("my-provider").setValue(idValue).onChange((value) => idValue = value.trim());
+      if (mode === "edit")
+        text.setDisabled(true);
+    });
+    new import_obsidian6.Setting(content).setName("\u663E\u793A\u540D\u79F0").addText(
+      (text) => text.setPlaceholder("OpenAI").setValue(provider.name || "").onChange((value) => provider.name = value.trim())
+    );
+    new import_obsidian6.Setting(content).setName("\u7C7B\u578B").setDesc("openai \u517C\u5BB9\u7C7B\u578B\u6807\u8BC6").addText(
+      (text) => text.setPlaceholder("openai").setValue(provider.type || "openai").onChange((value) => provider.type = value.trim() || "openai")
+    );
+    new import_obsidian6.Setting(content).setName("Base URL").setDesc("\u53EF\u9009\uFF0COpenAI \u517C\u5BB9\u63A5\u53E3\u5730\u5740").addText(
+      (text) => text.setPlaceholder("https://api.openai.com/v1").setValue(provider.baseUrl || "").onChange((value) => provider.baseUrl = value.trim())
+    );
+    new import_obsidian6.Setting(content).setName("API Key").addText((text) => {
+      text.inputEl.type = "password";
+      text.setPlaceholder("sk-...").setValue(provider.apiKey || "").onChange((value) => provider.apiKey = value.trim());
+    });
+    new import_obsidian6.Setting(content).setName("\u542F\u7528").addToggle(
+      (toggle) => toggle.setValue(provider.enabled).onChange((value) => provider.enabled = value)
+    );
+    const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
+    const cancelBtn = footer.createEl("button", { text: "\u53D6\u6D88" });
+    cancelBtn.onclick = () => modal.close();
+    const saveBtn = footer.createEl("button", { text: "\u4FDD\u5B58" });
+    saveBtn.onclick = async () => {
+      if (!idValue) {
+        new import_obsidian6.Notice("ID \u4E0D\u80FD\u4E3A\u7A7A");
+        return;
+      }
+      if (mode === "add" && this.plugin.settings.providers[idValue]) {
+        new import_obsidian6.Notice("ID \u5DF2\u5B58\u5728");
+        return;
+      }
+      if (mode === "add") {
+        this.plugin.settings.providers[idValue] = provider;
+      } else if (providerId) {
+        this.plugin.settings.providers[providerId] = provider;
+      }
+      await this.plugin.saveSettings();
+      this.display();
+      modal.close();
+    };
+    modal.open();
+  }
+  showModelModal(mode, modelId) {
+    const modal = new import_obsidian6.Modal(this.app);
+    modal.titleEl.setText(mode === "add" ? "\u6DFB\u52A0\u6A21\u578B" : `\u7F16\u8F91\u6A21\u578B ${modelId}`);
+    const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
+    const model = modelId ? { ...this.plugin.settings.models[modelId] } : {
+      id: "",
+      name: "",
+      provider: Object.keys(this.plugin.settings.providers)[0] || "openai",
+      model: "",
+      enabled: true,
+      category: MODEL_CATEGORIES.TEXT
+    };
+    let idValue = model.id;
+    new import_obsidian6.Setting(content).setName("ID").setDesc("\u552F\u4E00\u6807\u8BC6\uFF0C\u5EFA\u8BAE\u4F7F\u7528\u5C0F\u5199\u548C\u77ED\u6A2A\u7EBF").addText((text) => {
+      text.setPlaceholder("gpt-4o-mini").setValue(idValue).onChange((value) => idValue = value.trim());
+      if (mode === "edit")
+        text.setDisabled(true);
+    });
+    new import_obsidian6.Setting(content).setName("\u663E\u793A\u540D\u79F0").addText(
+      (text) => text.setPlaceholder("GPT-4o Mini").setValue(model.name).onChange((value) => model.name = value.trim())
+    );
+    new import_obsidian6.Setting(content).setName("Provider").addDropdown((drop) => {
+      Object.keys(this.plugin.settings.providers).forEach((pid) => drop.addOption(pid, pid));
+      drop.setValue(model.provider).onChange((value) => model.provider = value);
+    });
+    new import_obsidian6.Setting(content).setName("Model").setDesc("API \u6A21\u578B\u540D\u79F0\uFF0C\u4F8B\u5982 gpt-4o-mini").addText(
+      (text) => text.setPlaceholder("gpt-4o-mini").setValue(model.model).onChange((value) => model.model = value.trim())
+    );
+    new import_obsidian6.Setting(content).setName("\u7C7B\u522B").addDropdown((drop) => {
+      Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
+      drop.setValue(String(model.category)).onChange((value) => model.category = value);
+    });
+    new import_obsidian6.Setting(content).setName("\u542F\u7528").addToggle(
+      (toggle) => toggle.setValue(model.enabled).onChange((value) => model.enabled = value)
+    );
+    const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
+    footer.createEl("button", { text: "\u53D6\u6D88" }).onclick = () => modal.close();
+    footer.createEl("button", { text: "\u4FDD\u5B58" }).onclick = async () => {
+      if (!idValue) {
+        new import_obsidian6.Notice("\u6A21\u578B ID \u4E0D\u80FD\u4E3A\u7A7A");
+        return;
+      }
+      if (!model.name) {
+        new import_obsidian6.Notice("\u6A21\u578B\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A");
+        return;
+      }
+      if (!model.model) {
+        new import_obsidian6.Notice("Model \u5B57\u6BB5\u4E0D\u80FD\u4E3A\u7A7A");
+        return;
+      }
+      if (!this.plugin.settings.providers[model.provider]) {
+        new import_obsidian6.Notice("\u8BF7\u9009\u62E9\u6709\u6548\u7684 Provider");
+        return;
+      }
+      if (mode === "add" && this.plugin.settings.models[idValue]) {
+        new import_obsidian6.Notice("\u6A21\u578B ID \u5DF2\u5B58\u5728");
+        return;
+      }
+      const persisted = { ...model, id: idValue };
+      this.plugin.settings.models[idValue] = persisted;
+      this.ensureCurrentModelValid();
+      await this.plugin.saveSettings();
+      this.display();
+      modal.close();
+    };
+    modal.open();
+  }
+  ensureCurrentModelValid() {
+    const enabledModels = Object.entries(this.plugin.settings.models).filter(([_, m]) => m.enabled);
+    const hasCurrent = enabledModels.some(([id]) => id === this.plugin.settings.currentModel);
+    if (!hasCurrent) {
+      this.plugin.settings.currentModel = enabledModels[0]?.[0] || "";
+    }
   }
   addPdfSettings(containerEl) {
     containerEl.createEl("h3", { text: "\u{1F4C4} PDF \u5904\u7406" });
