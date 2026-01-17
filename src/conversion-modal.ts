@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile } from "obsidian";
+import { App, Modal, Notice, TFile, TFolder } from "obsidian";
 import { ConversionService } from "./conversion-service";
 import HandMarkdownAIPlugin from "./main";
 
@@ -10,6 +10,7 @@ export class ConversionModal extends Modal {
     private plugin: HandMarkdownAIPlugin;
     private selectedFiles: TFile[] = [];
     private fileCheckboxes: Map<string, HTMLInputElement> = new Map();
+    private folderCheckboxes: Map<string, HTMLInputElement> = new Map();
 
     constructor(app: App, plugin: HandMarkdownAIPlugin) {
         super(app);
@@ -82,38 +83,11 @@ export class ConversionModal extends Modal {
             this.updateSelectedFiles();
         });
 
-        // 文件列表
-        const fileList = fileListContainer.createDiv();
-        fileList.addClass("file-list");
-
-        supportedFiles.forEach(file => {
-            const fileItem = fileList.createDiv();
-            fileItem.addClass("file-item");
-
-            const checkbox = fileItem.createEl("input", {
-                type: "checkbox",
-                cls: "file-checkbox"
-            });
-
-            const fileName = fileItem.createEl("label", {
-                text: file.path,
-                cls: "file-name"
-            });
-
-            const fileSize = fileItem.createEl("span", {
-                text: this.formatFileSize(file.stat.size),
-                cls: "file-size"
-            });
-
-            // 存储checkbox引用
-            this.fileCheckboxes.set(file.path, checkbox);
-
-            // 文件选择变化事件
-            checkbox.addEventListener("change", () => {
-                this.updateSelectedFiles();
-                this.updateSelectAllState();
-            });
-        });
+        // 文件夹树形列表（与仓库类似）
+        const treeContainer = fileListContainer.createDiv();
+        treeContainer.addClass("file-tree-container");
+        const rootFolder = this.app.vault.getRoot();
+        this.buildFolderTree(rootFolder, treeContainer);
 
         // 统计信息
         const statsEl = contentEl.createDiv();
@@ -199,6 +173,110 @@ export class ConversionModal extends Modal {
             selectAllCheckbox.checked = allChecked;
             selectAllCheckbox.indeterminate = someChecked && !allChecked;
         }
+    }
+
+    /**
+     * 构建文件夹树
+     */
+    private buildFolderTree(folder: TFolder, containerEl: HTMLElement) {
+        const folderEl = containerEl.createDiv();
+        folderEl.addClass("folder-item");
+
+        const folderHeader = folderEl.createDiv();
+        folderHeader.addClass("folder-header");
+
+        const folderCheckbox = folderHeader.createEl("input", {
+            type: "checkbox",
+            cls: "folder-checkbox"
+        });
+        const folderLabel = folderHeader.createEl("label", {
+            text: folder.path || "/",
+            cls: "folder-name"
+        });
+
+        this.folderCheckboxes.set(folder.path || "/", folderCheckbox);
+
+        const childrenContainer = folderEl.createDiv();
+        childrenContainer.addClass("folder-children");
+
+        // 遍历子项
+        folder.children.forEach(child => {
+            if (child instanceof TFolder) {
+                this.buildFolderTree(child, childrenContainer);
+            } else if (child instanceof TFile) {
+                if (!ConversionService.isFileSupported(child.path)) return;
+
+                const fileItem = childrenContainer.createDiv();
+                fileItem.addClass("file-item");
+
+                const checkbox = fileItem.createEl("input", {
+                    type: "checkbox",
+                    cls: "file-checkbox"
+                });
+                const fileName = fileItem.createEl("label", {
+                    text: child.path,
+                    cls: "file-name"
+                });
+                const fileSize = fileItem.createEl("span", {
+                    text: this.formatFileSize(child.stat.size),
+                    cls: "file-size"
+                });
+
+                this.fileCheckboxes.set(child.path, checkbox);
+
+                checkbox.addEventListener("change", () => {
+                    this.updateSelectedFiles();
+                    this.updateSelectAllState();
+                    this.updateFolderIndeterminateStates(containerEl);
+                });
+            }
+        });
+
+        // 文件夹复选框级联
+        folderCheckbox.addEventListener("change", () => {
+            const checked = folderCheckbox.checked;
+            // 勾选/取消本文件夹内所有受支持的文件
+            this.toggleFolderChildren(containerEl, checked);
+            this.updateSelectedFiles();
+            this.updateSelectAllState();
+            this.updateFolderIndeterminateStates(containerEl);
+        });
+    }
+
+    /**
+     * 切换文件夹内所有文件的勾选状态
+     */
+    private toggleFolderChildren(containerEl: HTMLElement, checked: boolean) {
+        const checkboxes = containerEl.querySelectorAll("input.file-checkbox") as NodeListOf<HTMLInputElement>;
+        checkboxes.forEach(cb => {
+            cb.checked = checked;
+        });
+        // 子文件夹递归处理
+        const subFolders = containerEl.querySelectorAll(".folder-item");
+        subFolders.forEach(sub => {
+            const subFileCheckboxes = sub.querySelectorAll("input.file-checkbox") as NodeListOf<HTMLInputElement>;
+            subFileCheckboxes.forEach(cb => cb.checked = checked);
+            const subFolderCheckbox = sub.querySelector("input.folder-checkbox") as HTMLInputElement;
+            if (subFolderCheckbox) subFolderCheckbox.checked = checked;
+        });
+    }
+
+    /**
+     * 更新文件夹的半选状态
+     */
+    private updateFolderIndeterminateStates(rootEl: HTMLElement) {
+        const folderItems = rootEl.querySelectorAll(".folder-item");
+        folderItems.forEach(folderItem => {
+            const folderCheckbox = folderItem.querySelector("input.folder-checkbox") as HTMLInputElement;
+            const fileCheckboxes = folderItem.querySelectorAll("input.file-checkbox") as NodeListOf<HTMLInputElement>;
+            if (!folderCheckbox || fileCheckboxes.length === 0) return;
+
+            const allChecked = Array.from(fileCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(fileCheckboxes).some(cb => cb.checked);
+
+            folderCheckbox.checked = allChecked;
+            folderCheckbox.indeterminate = someChecked && !allChecked;
+        });
     }
 
     /**

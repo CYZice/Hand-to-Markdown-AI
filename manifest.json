@@ -1,11 +1,11 @@
 {
   "id": "hand-markdown-ai",
-  "name": "Hand Markdown AI",
+  "name": "Hand-Markdown-AI",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
   "description": "将手写笔记（PDF/JPG/PNG）转换为Markdown格式，支持多种AI提供商",
-  "author": "Your Name",
-  "authorUrl": "https://github.com/yourusername",
+  "author": "CYZice",
+  "authorUrl": "https://github.com/CYZice",
   "isDesktopOnly": false,
   "styles": [
     "styles.css"

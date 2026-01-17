@@ -45,6 +45,42 @@ export class AIService {
         };
     }
 
+    /**
+     * 测试当前 Provider/Model 的 API 连接（对齐 Markdown-Next-AI）
+     */
+    async testConnection(): Promise<{ success: boolean; message?: string }> {
+        try {
+            const config = this.getCurrentModelConfig();
+            if (!config.apiKey || !config.apiKey.trim()) {
+                return { success: false, message: "未配置 API Key" };
+            }
+
+            const url = this.buildApiUrl("/chat/completions");
+            const response = await requestUrl({
+                url: url,
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${config.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{ role: "user", content: "hi" }],
+                    max_tokens: 5
+                }),
+                throw: false
+            });
+
+            if (response.status === 200) {
+                return { success: true };
+            } else {
+                return { success: false, message: `HTTP ${response.status}: ${response.text}` };
+            }
+        } catch (error: any) {
+            return { success: false, message: error?.message || String(error) };
+        }
+    }
+
     isVisionModel(model?: string): boolean {
         const currentModelId = this.settings.currentModel;
         const modelConfig = this.settings.models[currentModelId];
@@ -657,6 +693,122 @@ export class AIService {
             return {
                 markdown: "",
                 sourcePath: fileData.path,
+                outputPath: "",
+                provider: this.settings.currentModel || "unknown",
+                duration: Date.now() - startTime,
+                success: false,
+                error: errorMessage
+            };
+        }
+    }
+
+    /**
+     * 批量转换多张图片（单次请求发送多张 image_url）
+     */
+    async convertImageBatch(
+        files: FileData[],
+        prompt?: string
+    ): Promise<ConversionResult> {
+        const startTime = Date.now();
+
+        try {
+            const config = this.getCurrentModelConfig();
+            if (!config.apiKey) {
+                throw new Error("请先配置API Key");
+            }
+
+            const currentModelId = this.settings.currentModel;
+            const modelConfig = this.settings.models[currentModelId];
+            let category = modelConfig?.category;
+            if (!category && modelConfig) {
+                category = modelConfig.type === "image" ? MODEL_CATEGORIES.IMAGE : MODEL_CATEGORIES.TEXT;
+            }
+
+            const isMultimodal = category === MODEL_CATEGORIES.MULTIMODAL;
+            const isVision = category === MODEL_CATEGORIES.VISION || this.isVisionModel(config.model);
+            if (!isMultimodal && !isVision) {
+                throw new Error(`当前模型 ${config.model} 不支持图片识别，请切换到多模态模型或视觉模型`);
+            }
+
+            const conversionPrompt = prompt || this.settings.conversionPrompt || SYSTEM_PROMPTS.convert;
+            const apiUrl = this.buildApiUrl("/chat/completions");
+
+            const messages: ChatMessage[] = [
+                { role: "system", content: conversionPrompt }
+            ];
+
+            const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+                { type: "text", text: "请将以下图片（可能是连续页）中的手写笔记合并转换为结构化的Markdown。" }
+            ];
+
+            files.forEach(file => {
+                content.push({
+                    type: "image_url",
+                    image_url: { url: file.base64 }
+                });
+            });
+
+            messages.push({ role: "user", content });
+
+            const requestBody: Record<string, unknown> = {
+                model: config.model,
+                messages,
+                temperature: 0.3,
+                max_tokens: this.settings.maxTokens || 4096
+            };
+
+            const response = await requestUrl({
+                url: apiUrl,
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${config.apiKey}`
+                },
+                body: JSON.stringify(requestBody),
+                throw: false
+            });
+
+            if (response.status !== 200) {
+                const errorText = response.text;
+                if (response.status === 429) {
+                    if (errorText.includes("quota") || errorText.includes("insufficient_quota")) {
+                        throw new Error("API配额已用完，请检查您的账户余额和计费详情。");
+                    } else {
+                        throw new Error("API请求频率过高，请稍后再试。");
+                    }
+                }
+                throw new Error(`API请求失败: ${response.status} ${errorText}`);
+            }
+
+            const data = response.json;
+            const choice = data.choices?.[0];
+            let contentText = "";
+            if (choice?.message?.content) {
+                contentText = choice.message.content.trim();
+            } else if (choice?.text) {
+                contentText = choice.text.trim();
+            } else if (choice?.message?.text) {
+                contentText = choice.message.text.trim();
+            }
+
+            const usage = data.usage || {};
+
+            return {
+                markdown: contentText,
+                sourcePath: files[0]?.path || "",
+                outputPath: "",
+                provider: config.model,
+                duration: Date.now() - startTime,
+                success: true,
+                modelId: currentModelId,
+                modelName: modelConfig?.name || config.model,
+                tokensUsed: usage.total_tokens as number
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                markdown: "",
+                sourcePath: files[0]?.path || "",
                 outputPath: "",
                 provider: this.settings.currentModel || "unknown",
                 duration: Date.now() - startTime,

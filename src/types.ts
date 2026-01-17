@@ -94,12 +94,17 @@ export interface OutputSettings {
     keepOriginalName: boolean;
     outputExtension: string;
     autoOpen: boolean;
+    contentAfterTitle?: string; // 标题下方插入的自定义内容
 }
 
 export interface AdvancedSettings {
     timeout: number;
     pdfQuality: number;  // PDF转图片质量 (0.1-1.0, 默认0.8)
     pdfScale: number;    // PDF转图片缩放比例 (1.0-2.0, 默认1.5)
+    imagesPerRequest?: number; // 每次提交给AI的图片数量（默认1）
+    concurrencyLimit?: number; // 批次并发限制（默认2）
+    retryAttempts?: number;    // 批次请求重试次数（默认2）
+    autoMinimizeProgress?: boolean; // 启动转换时自动最小化进度窗口
 }
 
 export interface FileData {

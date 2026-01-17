@@ -15,7 +15,7 @@
         "ocr",
         "ai"
     ],
-    "author": "Your Name",
+    "author": "CYZice",
     "license": "MIT",
     "dependencies": {
         "pdfjs-dist": "^4.0.379"

@@ -68,13 +68,18 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         outputDir: "Handwriting Converted",
         keepOriginalName: true,
         outputExtension: "md",
-        autoOpen: true
+        autoOpen: true,
+        contentAfterTitle: "" // 默认为空，不插入任何内容
     },
 
     advancedSettings: {
         timeout: 30000,
         pdfQuality: 0.8,
-        pdfScale: 1.5
+        pdfScale: 1.5,
+        imagesPerRequest: 1,
+        concurrencyLimit: 2,
+        retryAttempts: 2,
+        autoMinimizeProgress: false
     },
 
     apiKeyLinks: {
@@ -103,7 +108,8 @@ export const SUPPORTED_FILE_TYPES = {
     ".bmp": "image/bmp",
 
     // PDF格式
-    ".pdf": "application/pdf"
+    ".pdf": "application/pdf",
+
 };
 
 /**

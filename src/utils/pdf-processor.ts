@@ -126,6 +126,38 @@ export class PDFProcessor {
             throw new Error(`PDF 处理失败: ${errMsg}`);
         }
     }
+    /**
+     * 公共方法：转换指定页为 Base64 图片
+     */
+    static async convertSinglePageToImage(
+        buffer: ArrayBuffer,
+        pageNum: number,
+        options: {
+            scale?: number;
+            quality?: number;
+            format?: 'jpeg' | 'webp';
+            timeoutPerPage?: number;
+        } = {}
+    ): Promise<string> {
+        this.initWorker();
+        const {
+            scale = 1.5,
+            quality = 0.8,
+            format = 'jpeg',
+            timeoutPerPage = 20000
+        } = options;
+
+        const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
+        const pdf = await loadingTask.promise;
+
+        const pagePromise = this.renderPageToBase64(pdf, pageNum, scale, quality, format);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`第 ${pageNum} 页超时`)), timeoutPerPage)
+        );
+
+        const base64 = await Promise.race([pagePromise, timeoutPromise]);
+        return base64;
+    }
 
     /**
      * 将单个 PDF 页面渲染为 Base64 图片

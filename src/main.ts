@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { FuzzySuggestModal, MarkdownView, Notice, Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
 import { ConversionModal } from "./conversion-modal";
 import { ConversionService } from "./conversion-service";
 import { DEFAULT_SETTINGS } from "./defaults";
@@ -6,6 +6,7 @@ import { AIService } from "./services/ai-service";
 import type { PluginSettings } from "./types";
 import { SimpleSettingsTab } from "./ui/simple-settings-tab";
 import { PDFProcessor } from "./utils/pdf-processor";
+import { ExcalidrawProcessor } from "./utils/excalidraw-processor";
 
 export default class HandMarkdownAIPlugin extends Plugin {
     settings: PluginSettings;
@@ -29,9 +30,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
 
         this.registerContextMenu();
 
-        this.addRibbonIcon("file-text", "转换手写笔记", () => {
-            this.showConversionModal();
-        });
+        // 根据需求移除 Ribbon 图标点击入口
 
         console.log("Hand Markdown AI 插件加载完成");
     }
@@ -60,21 +59,6 @@ export default class HandMarkdownAIPlugin extends Plugin {
      * 注册命令
      */
     private registerCommands() {
-        // 转换单个文件
-        this.addCommand({
-            id: "convert-single-file",
-            name: "转换单个文件",
-            hotkeys: [
-                {
-                    modifiers: ["Mod", "Shift"],
-                    key: "C"
-                }
-            ],
-            callback: () => {
-                this.showConversionModal();
-            }
-        });
-
         // 转换当前文件
         this.addCommand({
             id: "convert-current-file",
@@ -103,77 +87,12 @@ export default class HandMarkdownAIPlugin extends Plugin {
             }
         });
 
-        // 转换选中的文件
+        // 选择文件夹并批量转换
         this.addCommand({
-            id: "convert-selected-files",
-            name: "转换选中的文件",
-            hotkeys: [
-                {
-                    modifiers: ["Mod", "Shift", "Alt"],
-                    key: "C"
-                }
-            ],
+            id: "convert-folder",
+            name: "转换文件夹内所有文件",
             callback: () => {
-                this.showFileSelectionModal();
-            }
-        });
-
-        // 打开设置
-        this.addCommand({
-            id: "open-settings",
-            name: "打开设置",
-            hotkeys: [
-                {
-                    modifiers: ["Mod"],
-                    key: ","
-                }
-            ],
-            callback: () => {
-                this.openSettings();
-            }
-        });
-
-        // 快速转换当前文件（无确认）
-        this.addCommand({
-            id: "quick-convert-current",
-            name: "快速转换当前文件（无确认）",
-            hotkeys: [
-                {
-                    modifiers: ["Mod"],
-                    key: "K"
-                }
-            ],
-            checkCallback: (checking: boolean) => {
-                const activeFile = this.app.workspace.getActiveFile();
-                if (!activeFile) {
-                    return false;
-                }
-
-                if (!ConversionService.isFileSupported(activeFile.path)) {
-                    return false;
-                }
-
-                if (!checking) {
-                    // 验证配置
-                    if (!this.conversionService.validateConfig()) {
-                        new Notice("请先在设置中配置AI提供商", 5000);
-                        this.openSettings();
-                        return;
-                    }
-
-                    // 直接执行转换，不显示确认
-                    this.convertFile(activeFile.path);
-                }
-
-                return true;
-            }
-        });
-
-        this.addCommand({
-            id: "toggle-model",
-            name: "切换AI模型",
-            callback: () => {
-                this.toggleModel();
+                this.chooseFolderAndConvert();
             }
         });
     }
@@ -182,20 +101,252 @@ export default class HandMarkdownAIPlugin extends Plugin {
      * 注册右键菜单
      */
     private registerContextMenu() {
+        // 文件浏览器右键菜单（统一处理）
         this.registerEvent(
             this.app.workspace.on("file-menu", (menu, file) => {
                 if (file instanceof TFile && ConversionService.isFileSupported(file.path)) {
                     menu.addItem((item) => {
                         item
                             .setTitle("转换为Markdown")
-                            .setIcon("file-text")
+                            .setIcon("wand")
+                            .onClick(async () => {
+                                await this.handleConvertFile(file);
+                            });
+                    });
+                }
+                // 仅对输出目录中的 Markdown 文件提供重试选项
+                if (file instanceof TFile) {
+                    const ext = file.extension?.toLowerCase?.() || "";
+                    const outExt = this.settings.outputSettings.outputExtension.toLowerCase();
+                    const outDir = (this.settings.outputSettings.outputDir || "").replace(/^\/+/, "");
+                    const parentPath = file.parent?.path || "";
+                    const inOutputDir = outDir && (parentPath === outDir || parentPath.startsWith(outDir + "/"));
+                    const isOutputMarkdown = ext === outExt && inOutputDir;
+                    if (isOutputMarkdown) {
+                        menu.addItem((item) => {
+                            item
+                                .setTitle("重试失败页（输出文件）")
+                                .setIcon("refresh-ccw")
+                                .onClick(() => {
+                                    this.conversionService.retryFailedPagesFromOutput(file.path);
+                                });
+                        });
+                        menu.addItem((item) => {
+                            item
+                                .setTitle("重试指定页（输出文件）")
+                                .setIcon("rotate-ccw")
+                                .onClick(() => {
+                                    const pageStr = prompt("请输入要重试的页码：");
+                                    const pageNum = pageStr ? parseInt(pageStr) : NaN;
+                                    if (!isNaN(pageNum) && pageNum > 0) {
+                                        this.conversionService.retrySinglePageFromOutput(file.path, undefined, pageNum);
+                                    }
+                                });
+                        });
+                    }
+                }
+                if (file instanceof TFolder) {
+                    menu.addItem((item) => {
+                        item
+                            .setTitle("转换此文件夹内所有文件")
+                            .setIcon("folder")
                             .onClick(() => {
-                                this.convertFile(file.path);
+                                this.convertFolder(file.path);
                             });
                     });
                 }
             })
         );
+    }
+
+    /**
+     * 统一的文件转换处理器
+     * 根据上下文决定是插入到编辑器还是创建新文件
+     */
+    private async handleConvertFile(file: TFile) {
+        // 验证配置
+        if (!this.conversionService.validateConfig()) {
+            new Notice("请先在设置中配置AI提供商", 5000);
+            this.openSettings();
+            return;
+        }
+
+        // 检查当前活动编辑器中是否有该文件的链接被选中
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.editor) {
+            const editor = activeView.editor;
+            const cursor = editor.getCursor();
+            const line = editor.getLine(cursor.line);
+            const linkInfo = this.extractImageAtCursor(line, cursor.ch);
+
+            // 如果光标在链接上，且链接指向当前文件，则插入到编辑器
+            if (linkInfo) {
+                const currentFile = activeView.file;
+                const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, currentFile?.path || '');
+
+                if (targetFile && targetFile.path === file.path) {
+                    // 在编辑器中插入
+                    await this.convertLinkInEditor(linkInfo, editor, activeView, cursor.line);
+                    return;
+                }
+            }
+        }
+
+        // 否则创建新文件
+        await this.convertFile(file.path);
+    }
+
+    /**
+     * 从光标位置提取文件链接路径
+     * 支持 ![[image.png]]、![alt](image.png)、[[file.pdf]] 和 [title](file.pdf) 格式
+     */
+    private extractImageAtCursor(line: string, ch: number): { path: string; start: number; end: number; format: 'wiki' | 'markdown' } | null {
+        // 检测 Wiki 图片链接格式: ![[image.png]]
+        const wikiImageRegex = /!\[\[([^\]]+)\]\]/g;
+        let match;
+        while ((match = wikiImageRegex.exec(line)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            if (ch >= start && ch <= end) {
+                return {
+                    path: match[1].split('|')[0].trim(), // 去掉可能的别名
+                    start,
+                    end,
+                    format: 'wiki'
+                };
+            }
+        }
+
+        // 检测 Markdown 图片格式: ![alt](image.png)
+        const mdImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+        while ((match = mdImageRegex.exec(line)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            if (ch >= start && ch <= end) {
+                return {
+                    path: match[2].trim(),
+                    start,
+                    end,
+                    format: 'markdown'
+                };
+            }
+        }
+
+        // 检测 Wiki 文件链接格式: [[file.pdf]]
+        const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
+        while ((match = wikiLinkRegex.exec(line)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            if (ch >= start && ch <= end) {
+                return {
+                    path: match[1].split('|')[0].trim(),
+                    start,
+                    end,
+                    format: 'wiki'
+                };
+            }
+        }
+
+        // 检测 Markdown 文件链接格式: [title](file.pdf)
+        const mdLinkRegex = /\[([^\]]*)\]\(([^)]+)\)/g;
+        while ((match = mdLinkRegex.exec(line)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+            if (ch >= start && ch <= end) {
+                return {
+                    path: match[2].trim(),
+                    start,
+                    end,
+                    format: 'markdown'
+                };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 转换编辑器中的链接文件（图片、PDF、Excalidraw）为Markdown文本
+     * 在编辑器中直接插入到链接下方
+     */
+    private async convertLinkInEditor(
+        linkInfo: { path: string; start: number; end: number; format: 'wiki' | 'markdown' },
+        editor: any,
+        view: any,
+        lineNum: number
+    ) {
+        try {
+            // 验证配置
+            if (!this.conversionService.validateConfig()) {
+                new Notice("请先在设置中配置AI提供商", 5000);
+                this.openSettings();
+                return;
+            }
+
+            new Notice("正在转换文件...", 2000);
+
+            // 使用 Obsidian 的链接解析 API 来正确解析文件路径
+            const currentFile = view.file;
+            const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, currentFile?.path || '');
+
+            if (!(targetFile instanceof TFile)) {
+                // 如果解析失败，显示详细错误信息
+                new Notice(`找不到文件: ${linkInfo.path}\n当前文件: ${currentFile?.path || '未知'}`, 5000);
+                console.error('文件路径解析失败:', {
+                    linkPath: linkInfo.path,
+                    sourcePath: currentFile?.path,
+                    resolvedFile: targetFile
+                });
+                return;
+            }
+
+            // 检查是否为支持的格式
+            if (!ConversionService.isFileSupported(targetFile.path)) {
+                new Notice(`不支持的文件格式: ${targetFile.extension}`, 5000);
+                return;
+            }
+
+            // 使用 ConversionService 转换文件，但不保存到新文件
+            // 我们需要直接获取转换结果
+            const { FileProcessor } = await import('./file-processor');
+            
+            // 特殊处理 Excalidraw 文件
+            let fileData;
+            if (targetFile.path.endsWith('.excalidraw')) {
+                // 读取 Excalidraw JSON 文件
+                const jsonContent = await this.app.vault.read(targetFile);
+                
+                // 转换为 PNG FileData
+                fileData = await ExcalidrawProcessor.convertExcalidrawToPng(
+                    jsonContent,
+                    targetFile.path
+                );
+            } else {
+                // 处理普通图片和 PDF
+                fileData = await FileProcessor.processFile(targetFile.path, this.app);
+            }
+
+            // 使用 AI 转换
+            const prompt = this.settings.conversionPrompt || "将文件中的内容转换为Markdown格式";
+            const result = await this.aiService.convertFile(fileData, prompt);
+
+            if (result.success && result.markdown) {
+                // 在链接下方插入转换结果
+                const insertLine = lineNum + 1;
+                const insertText = `\n${result.markdown}\n`;
+
+                editor.replaceRange(insertText, { line: insertLine, ch: 0 });
+
+                new Notice("转换成功！", 3000);
+            } else {
+                new Notice(`转换失败: ${result.error || '未知错误'}`, 5000);
+            }
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            new Notice(`转换失败: ${errorMessage}`, 5000);
+            console.error("转换文件失败:", error);
+        }
     }
 
     /**
@@ -212,6 +363,59 @@ export default class HandMarkdownAIPlugin extends Plugin {
         // 这里可以创建一个文件选择器
         // 暂时使用转换对话框
         new ConversionModal(this.app, this).open();
+    }
+
+    /**
+     * 选择文件夹并批量转换
+     */
+    private chooseFolderAndConvert() {
+        const folders: TFolder[] = [];
+        const all = this.app.vault.getAllLoadedFiles();
+        all.forEach((f: TAbstractFile) => {
+            if (f instanceof TFolder) folders.push(f);
+        });
+
+        new class FolderSuggest extends FuzzySuggestModal<TFolder> {
+            constructor(private plugin: HandMarkdownAIPlugin, private items: TFolder[]) {
+                super(plugin.app);
+                this.setPlaceholder("选择一个文件夹进行批量转换...");
+            }
+            getItems(): TFolder[] { return this.items; }
+            getItemText(item: TFolder): string { return item.path; }
+            onChooseItem(item: TFolder) { this.plugin.convertFolder(item.path); }
+        }(this, folders).open();
+    }
+
+    /**
+     * 批量转换一个文件夹内的所有受支持文件（包含子文件夹）
+     */
+    private async convertFolder(folderPath: string) {
+        // 验证配置
+        if (!this.conversionService.validateConfig()) {
+            new Notice("请先在设置中配置AI提供商", 5000);
+            this.openSettings();
+            return;
+        }
+
+        const files: string[] = [];
+        const root = this.app.vault.getAbstractFileByPath(folderPath);
+        const walk = (node: TAbstractFile | null) => {
+            if (!node) return;
+            if (node instanceof TFile) {
+                if (ConversionService.isFileSupported(node.path)) files.push(node.path);
+            } else if (node instanceof TFolder) {
+                node.children.forEach(ch => walk(ch));
+            }
+        };
+        walk(root);
+
+        if (files.length === 0) {
+            new Notice("该文件夹内没有可转换的文件", 3000);
+            return;
+        }
+
+        new Notice(`开始批量转换，共 ${files.length} 个文件...`, 3000);
+        await this.convertFiles(files);
     }
 
     /**
@@ -260,8 +464,18 @@ export default class HandMarkdownAIPlugin extends Plugin {
             return;
         }
 
-        // 执行批量转换
-        const results = await this.conversionService.convertFiles(supportedFiles);
+        // 执行批量转换（带总进度）
+        const { BatchProgressModal } = await import("./ui/batch-progress-modal");
+        const batch = new BatchProgressModal(this.app);
+        batch.open();
+        batch.setTotals(supportedFiles.length);
+
+        const results = await this.conversionService.convertFiles(supportedFiles, ({ current, total, message }) => {
+            batch.updateProgress(current);
+            batch.setStatus(`${message} (${current}/${total})`);
+        });
+
+        batch.close();
 
         // 统计结果
         const successCount = results.filter(r => r.success).length;
