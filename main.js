@@ -3298,6 +3298,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
     this.addSettingTab(new SimpleSettingsTab(this.app, this));
     this.registerCommands();
     this.registerContextMenu();
+    this.registerPreviewImageContextMenu();
     console.log("Hand Markdown AI \u63D2\u4EF6\u52A0\u8F7D\u5B8C\u6210");
   }
   onunload() {
@@ -3396,6 +3397,42 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         }
       })
     );
+  }
+  /**
+   * 注册 markdown 预览图片的原生右键菜单（支持所有图片，包括 Excalidraw 导出 PNG）
+   */
+  registerPreviewImageContextMenu() {
+    this.registerDomEvent(document, "contextmenu", async (evt) => {
+      const img = evt.target;
+      if (!img || img.tagName !== "IMG")
+        return;
+      const preview = img.closest(".markdown-preview-view");
+      if (!preview)
+        return;
+      let imgPath = img.dataset?.href || img.getAttribute("src");
+      if (!imgPath)
+        return;
+      const supported = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
+      if (!supported.some((ext) => imgPath.toLowerCase().endsWith(ext)))
+        return;
+      let vaultPath = imgPath;
+      if (vaultPath.startsWith("app://local/")) {
+        const parts = vaultPath.replace("app://local/", "").split("/");
+        parts.shift();
+        vaultPath = parts.join("/");
+      }
+      const file = this.app.vault.getAbstractFileByPath(vaultPath);
+      if (file instanceof import_obsidian9.TFile && ConversionService.isFileSupported(file.path)) {
+        evt.preventDefault();
+        const menu = new import_obsidian9.Menu();
+        menu.addItem((item) => {
+          item.setTitle("\u8F6C\u6362\u4E3AMarkdown").setIcon("wand").onClick(async () => {
+            await this.handleConvertFile(file);
+          });
+        });
+        menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
+      }
+    });
   }
   /**
    * 统一的文件转换处理器

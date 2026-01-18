@@ -1,4 +1,5 @@
-import { FuzzySuggestModal, MarkdownView, Notice, Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
+// 修改后的导入
+import { FuzzySuggestModal, MarkdownView, Menu, MenuItem, Notice, Plugin, TAbstractFile, TFile, TFolder } from "obsidian";
 import { ConversionModal } from "./conversion-modal";
 import { ConversionService } from "./conversion-service";
 import { DEFAULT_SETTINGS } from "./defaults";
@@ -28,6 +29,9 @@ export default class HandMarkdownAIPlugin extends Plugin {
         this.registerCommands();
 
         this.registerContextMenu();
+
+
+        this.registerPreviewImageContextMenu(); // 注册 markdown 预览图片的原生右键菜单
 
         // 根据需求移除 Ribbon 图标点击入口
 
@@ -156,6 +160,54 @@ export default class HandMarkdownAIPlugin extends Plugin {
                 }
             })
         );
+    }
+
+
+
+    /**
+     * 注册 markdown 预览图片的原生右键菜单（支持所有图片，包括 Excalidraw 导出 PNG）
+     */
+    private registerPreviewImageContextMenu() {
+        this.registerDomEvent(document, "contextmenu", async (evt: MouseEvent) => {
+            // 只处理 markdown 预览视图下的图片
+            const img = evt.target as HTMLImageElement;
+            if (!img || img.tagName !== "IMG") return;
+            const preview = img.closest(".markdown-preview-view");
+            if (!preview) return;
+
+            // 获取 vault 内部图片路径
+            let imgPath = (img as any).dataset?.href || img.getAttribute("src");
+            if (!imgPath) return;
+
+            // 只处理支持的图片类型
+            const supported = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
+            if (!supported.some(ext => imgPath.toLowerCase().endsWith(ext))) return;
+
+            // 兼容 app://local/ 路径
+            let vaultPath = imgPath;
+            if (vaultPath.startsWith("app://local/")) {
+                const parts = vaultPath.replace("app://local/", "").split("/");
+                parts.shift();
+                vaultPath = parts.join("/");
+            }
+
+            // 检查文件是否存在
+            const file = this.app.vault.getAbstractFileByPath(vaultPath);
+            if (file instanceof TFile && ConversionService.isFileSupported(file.path)) {
+                // 阻止默认菜单
+                evt.preventDefault();
+                // 弹出自定义菜单
+                const menu = new Menu();
+                menu.addItem((item: MenuItem) => {
+                    item.setTitle("转换为Markdown")
+                        .setIcon("wand")
+                        .onClick(async () => {
+                            await this.handleConvertFile(file);
+                        });
+                });
+                menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
+            }
+        });
     }
 
     /**
