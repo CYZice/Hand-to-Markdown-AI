@@ -92,8 +92,8 @@ export class ProgressModal extends Modal {
     setTotals(totalPages: number, totalJobs: number) {
         this.totalPages = Math.max(0, totalPages);
         this.totalJobs = Math.max(0, totalJobs);
-        this.updateRenderProgress(0);
-        this.updateAIProgress(0);
+        this.updateRenderProgress(this.currentRenderProgress);
+        this.updateAIProgress(this.currentAIProgress);
     }
 
     updateRenderProgress(donePages: number) {
@@ -210,6 +210,10 @@ export class ProgressModal extends Modal {
         restoreBtn.onclick = () => this.restore();
 
         document.body.appendChild(this.overlayEl);
+
+        this.updateRenderProgress(this.currentRenderProgress);
+        this.updateAIProgress(this.currentAIProgress);
+        this.setStatus(this.currentStatus);
     }
 
     /** 还原为模态窗口 */

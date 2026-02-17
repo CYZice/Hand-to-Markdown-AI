@@ -87,6 +87,7 @@ export interface PluginSettings {
     outputSettings: OutputSettings;
     advancedSettings: AdvancedSettings;
     apiKeyLinks?: Record<string, string>;
+    useKeychain?: boolean;
 }
 
 export interface OutputSettings {

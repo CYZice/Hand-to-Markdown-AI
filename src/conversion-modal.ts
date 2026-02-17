@@ -236,7 +236,7 @@ export class ConversionModal extends Modal {
         folderCheckbox.addEventListener("change", () => {
             const checked = folderCheckbox.checked;
             // 勾选/取消本文件夹内所有受支持的文件
-            this.toggleFolderChildren(containerEl, checked);
+            this.toggleFolderChildren(folderEl, checked);
             this.updateSelectedFiles();
             this.updateSelectAllState();
             this.updateFolderIndeterminateStates(containerEl);

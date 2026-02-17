@@ -22,7 +22,38 @@ export class AIService {
         this.settings = settings;
     }
 
-    getCurrentModelConfig(): APIModelConfig {
+    async resolveConfig(config: APIModelConfig): Promise<APIModelConfig> {
+        if (config.apiKey && config.apiKey.startsWith("secret:")) {
+            const secretId = config.apiKey.substring(7);
+
+            let secretStorage = (this.app as any).secretStorage;
+            if (!secretStorage) {
+                if ((this.app as any).keychain) {
+                    secretStorage = (this.app as any).keychain;
+                } else if ((window as any).secretStorage) {
+                    secretStorage = (window as any).secretStorage;
+                } else if ((this.app as any).vault?.secretStorage) {
+                    secretStorage = (this.app as any).vault.secretStorage;
+                }
+            }
+
+            if (secretStorage && (typeof secretStorage.get === "function" || typeof secretStorage.getSecret === "function")) {
+                try {
+                    const key = typeof secretStorage.get === "function"
+                        ? await secretStorage.get(secretId)
+                        : await secretStorage.getSecret(secretId);
+                    if (key) {
+                        config.apiKey = key;
+                    }
+                } catch (e) {
+                    console.error(`Failed to load key ${secretId} from secret storage`, e);
+                }
+            }
+        }
+        return config;
+    }
+
+    async getCurrentModelConfig(): Promise<APIModelConfig> {
         const currentModelId = this.settings.currentModel;
         if (!currentModelId) {
             throw new Error("未选择当前模型");
@@ -38,11 +69,11 @@ export class AIService {
             throw new Error(`供应商 ${modelConfig.provider} 未启用或不存在`);
         }
 
-        return {
+        return this.resolveConfig({
             apiKey: providerConfig.apiKey,
             baseUrl: providerConfig.baseUrl,
             model: modelConfig.actualModel || modelConfig.model || modelConfig.id
-        };
+        });
     }
 
     /**
@@ -50,12 +81,12 @@ export class AIService {
      */
     async testConnection(): Promise<{ success: boolean; message?: string }> {
         try {
-            const config = this.getCurrentModelConfig();
+            const config = await this.getCurrentModelConfig();
             if (!config.apiKey || !config.apiKey.trim()) {
                 return { success: false, message: "未配置 API Key" };
             }
 
-            const url = this.buildApiUrl("/chat/completions");
+            const url = this.buildApiUrl(config.baseUrl, "/chat/completions");
             const response = await requestUrl({
                 url: url,
                 method: "POST",
@@ -114,9 +145,8 @@ export class AIService {
         return url.replace(/\/$/, "");
     }
 
-    buildApiUrl(endpoint: string): string {
-        const config = this.getCurrentModelConfig();
-        const baseUrl = this.normalizeBaseUrl(config.baseUrl);
+    buildApiUrl(baseUrlInput: string, endpoint: string): string {
+        const baseUrl = this.normalizeBaseUrl(baseUrlInput);
         const isOpenAI = baseUrl.includes("api.openai.com");
 
         if (baseUrl.endsWith("/v1")) {
@@ -127,6 +157,15 @@ export class AIService {
         } else {
             return `${baseUrl}/v1${endpoint}`;
         }
+    }
+
+    private normalizeImageUrl(input: { base64?: string; url?: string; mimeType?: string; type?: string }): string {
+        const raw = input.base64 || input.url || "";
+        if (!raw) return "";
+        if (raw.startsWith("data:")) return raw;
+        if (/^https?:\/\//i.test(raw)) return raw;
+        const mimeType = input.mimeType || input.type || "image/png";
+        return `data:${mimeType};base64,${raw}`;
     }
 
     getMaxTokens(mode: string): number {
@@ -141,7 +180,7 @@ export class AIService {
         chatHistory: ChatMessage[] = [],
         onStream: ((data: { content: string; thinking: string; fullContent: string; isComplete: boolean }) => void) | null = null
     ): Promise<{ content: string; thinking?: string; usage: Record<string, unknown>; imageData?: unknown }> {
-        const config = this.getCurrentModelConfig();
+        const config = await this.getCurrentModelConfig();
 
         if (!config.apiKey) {
             throw new Error("请先配置API Key");
@@ -201,7 +240,7 @@ export class AIService {
             userPrompt += `\n\n【重要提示：以下是必须参考的文档内容，请务必基于这些内容进行回复，不得忽略】\n\n=== 必读参考文档 ===\n${context.contextContent}\n=== 参考文档结束 ===\n\n【请确保你的回复完全基于上述文档内容，必须引用和使用文档中的信息】`;
         }
 
-        const apiUrl = this.buildApiUrl("/chat/completions");
+        const apiUrl = this.buildApiUrl(config.baseUrl, "/chat/completions");
 
         const messages: ChatMessage[] = [
             { role: "system", content: systemPrompt }
@@ -448,7 +487,7 @@ export class AIService {
             throw new Error("请输入图片描述");
         }
 
-        const apiUrl = this.buildApiUrl("/images/generations");
+        const apiUrl = this.buildApiUrl(config.baseUrl, "/images/generations");
         const model = config.model;
 
         const requestBody: Record<string, unknown> = {
@@ -563,7 +602,7 @@ export class AIService {
         const startTime = Date.now();
 
         try {
-            const config = this.getCurrentModelConfig();
+            const config = await this.getCurrentModelConfig();
 
             if (!config.apiKey) {
                 throw new Error("请先配置API Key");
@@ -590,7 +629,7 @@ export class AIService {
 
             const conversionPrompt = prompt || this.settings.conversionPrompt || SYSTEM_PROMPTS.convert;
 
-            const apiUrl = this.buildApiUrl("/chat/completions");
+            const apiUrl = this.buildApiUrl(config.baseUrl, "/chat/completions");
 
             const messages: ChatMessage[] = [
                 { role: "system", content: conversionPrompt }
@@ -603,7 +642,7 @@ export class AIService {
             content.push({
                 type: "image_url",
                 image_url: {
-                    url: fileData.base64
+                    url: this.normalizeImageUrl(fileData)
                 }
             });
 
@@ -712,7 +751,7 @@ export class AIService {
         const startTime = Date.now();
 
         try {
-            const config = this.getCurrentModelConfig();
+            const config = await this.getCurrentModelConfig();
             if (!config.apiKey) {
                 throw new Error("请先配置API Key");
             }
@@ -731,7 +770,7 @@ export class AIService {
             }
 
             const conversionPrompt = prompt || this.settings.conversionPrompt || SYSTEM_PROMPTS.convert;
-            const apiUrl = this.buildApiUrl("/chat/completions");
+            const apiUrl = this.buildApiUrl(config.baseUrl, "/chat/completions");
 
             const messages: ChatMessage[] = [
                 { role: "system", content: conversionPrompt }
@@ -744,7 +783,7 @@ export class AIService {
             files.forEach(file => {
                 content.push({
                     type: "image_url",
-                    image_url: { url: file.base64 }
+                    image_url: { url: this.normalizeImageUrl(file) }
                 });
             });
 
@@ -923,8 +962,20 @@ export class AIService {
 
     validateConfig(): boolean {
         try {
-            const config = this.getCurrentModelConfig();
-            return !!(config.apiKey && config.baseUrl && config.model);
+            const currentModelId = this.settings.currentModel;
+            if (!currentModelId) return false;
+
+            const modelConfig = this.settings.models[currentModelId];
+            if (!modelConfig || !modelConfig.enabled) return false;
+
+            const providerConfig = this.settings.providers[modelConfig.provider];
+            if (!providerConfig || !providerConfig.enabled) return false;
+
+            const apiKey = providerConfig.apiKey;
+            const baseUrl = providerConfig.baseUrl;
+            const model = modelConfig.actualModel || modelConfig.model || modelConfig.id;
+
+            return !!(apiKey && baseUrl && model);
         } catch (error) {
             return false;
         }

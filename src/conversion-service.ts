@@ -138,11 +138,13 @@ export class ConversionService {
 
             new Notice(`开始处理 PDF，共 ${totalPages} 页`, 3000);
 
+            const batchSize = this.settings.advancedSettings?.imagesPerRequest || 1;
+            const expectedTotalJobs = Math.max(1, Math.ceil(totalPages / batchSize));
+
             // 进度模态框
             progressModal = new ProgressModal(this.app);
             progressModal.open();
-            // totalJobs 暂未知，先设置为 0，后续随着批次增加动态更新
-            progressModal.setTotals(totalPages, 0);
+            progressModal.setTotals(totalPages, expectedTotalJobs);
             if (this.settings.advancedSettings?.autoMinimizeProgress) {
                 progressModal.minimize();
             }
@@ -173,7 +175,6 @@ export class ConversionService {
             const prompt = this.getConversionPrompt();
 
             // 5. 流式处理每一页（支持批量提交图片）
-            const batchSize = this.settings.advancedSettings?.imagesPerRequest || 1;
             let batchImages: FileData[] = [];
 
             // 批次并发池
@@ -185,10 +186,6 @@ export class ConversionService {
             const jobResults = new Map<number, { result: import("./types").ConversionResult; job: BatchJob }>();
             let nextWriteId = 1;
             let writing = false;
-
-            const updateTotals = () => {
-                progressModal!.setTotals(totalPages, totalJobs);
-            };
 
             const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -246,7 +243,7 @@ export class ConversionService {
 
                         progressModal!.updateAIProgress(nextWriteId);
                         const processedPages = job.endPage; // 当前批次结束页即为已处理的页数
-                        progressModal!.setStatus(`已完成批次 ${nextWriteId}/${totalJobs}，已处理 ${processedPages}/${totalPages} 页（成功 ${successPages} 页）`);
+                        progressModal!.setStatus(`已完成批次 ${nextWriteId}/${expectedTotalJobs}，已处理 ${processedPages}/${totalPages} 页（成功 ${successPages} 页）`);
 
                         const finalNewContent = currentContent + appendContent;
 
@@ -321,8 +318,7 @@ export class ConversionService {
                             };
                             jobQueue.push(job);
                             totalJobs++;
-                            updateTotals();
-                            progressModal!.setStatus(`已提交批次 ${totalJobs}（第 ${job.startPage}-${job.endPage} 页），正在并发处理...`);
+                            progressModal!.setStatus(`已提交批次 ${totalJobs}/${expectedTotalJobs}（第 ${job.startPage}-${job.endPage} 页），正在并发处理...`);
                             batchImages = [];
                             runNextJob();
                         }
@@ -696,6 +692,25 @@ export class ConversionService {
     /**
      * 创建输出文件并返回路径
      */
+    private getAvailableOutputPath(outputDir: string, fileName: string): string {
+        const initialPath = `${outputDir}/${fileName}`;
+        if (!this.app.vault.getAbstractFileByPath(initialPath)) {
+            return initialPath;
+        }
+
+        const dotIndex = fileName.lastIndexOf(".");
+        const baseName = dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+        const ext = dotIndex > 0 ? fileName.slice(dotIndex) : "";
+
+        let counter = 1;
+        let candidate = `${outputDir}/${baseName} (${counter})${ext}`;
+        while (this.app.vault.getAbstractFileByPath(candidate)) {
+            counter++;
+            candidate = `${outputDir}/${baseName} (${counter})${ext}`;
+        }
+        return candidate;
+    }
+
     private async createOutputFile(fileData: FileData, initialContent: string): Promise<string> {
         const { outputSettings } = this.settings;
 
@@ -722,15 +737,8 @@ export class ConversionService {
         }
 
         // 构建完整输出路径
-        const outputPath = `${outputDir.slice(1)}/${outputFileName}`;
-
-        // 检查文件是否已存在
-        const existingFile = this.app.vault.getAbstractFileByPath(outputPath);
-        if (existingFile instanceof TFile) {
-            await this.app.vault.modify(existingFile, initialContent);
-        } else {
-            await this.app.vault.create(outputPath, initialContent);
-        }
+        const outputPath = this.getAvailableOutputPath(outputDir.slice(1), outputFileName);
+        await this.app.vault.create(outputPath, initialContent);
 
         return outputPath;
     }
@@ -772,21 +780,13 @@ export class ConversionService {
         }
 
         // 构建完整输出路径
-        const outputPath = `${outputDir.slice(1)}/${outputFileName}`;
+        const outputPath = this.getAvailableOutputPath(outputDir.slice(1), outputFileName);
 
         // 生成文件内容：标题 + 自定义内容 + markdown
         const fileName = fileData.name.replace(/\.[^/.]+$/, "");
         const titleAndContent = `# ${fileName}\n${outputSettings.contentAfterTitle ? '\n' + outputSettings.contentAfterTitle + '\n' : '\n'}${markdown}`;
 
-        // 检查文件是否已存在
-        const existingFile = this.app.vault.getAbstractFileByPath(outputPath);
-        if (existingFile instanceof TFile) {
-            // 文件已存在，询问是否覆盖（这里简化为直接覆盖）
-            await this.app.vault.modify(existingFile, titleAndContent);
-        } else {
-            // 创建新文件
-            await this.app.vault.create(outputPath, titleAndContent);
-        }
+        await this.app.vault.create(outputPath, titleAndContent);
 
         // 如果启用自动打开，打开文件
         if (outputSettings.autoOpen) {
@@ -811,7 +811,5 @@ export class ConversionService {
         return FileProcessor.isFileSupported(filePath);
     }
 }
-
-
 
 

@@ -30,6 +30,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
 
         this.registerContextMenu();
 
+        this.registerEditorLinkContextMenu();
 
         this.registerPreviewImageContextMenu(); // 注册 markdown 预览图片的原生右键菜单
 
@@ -44,6 +45,9 @@ export default class HandMarkdownAIPlugin extends Plugin {
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        if (this.settings.useKeychain !== false) {
+            await this.migrateKeysToKeychain();
+        }
     }
 
     async saveSettings() {
@@ -58,14 +62,57 @@ export default class HandMarkdownAIPlugin extends Plugin {
         }
     }
 
+    async migrateKeysToKeychain(): Promise<void> {
+        let secretStorage = (this.app as any).secretStorage;
+        if (!secretStorage) {
+            if ((this.app as any).keychain) {
+                secretStorage = (this.app as any).keychain;
+            } else if ((window as any).secretStorage) {
+                secretStorage = (window as any).secretStorage;
+            } else if ((this.app as any).vault?.secretStorage) {
+                secretStorage = (this.app as any).vault.secretStorage;
+            }
+        }
+
+        const hasSecretStorage = secretStorage && (typeof secretStorage.save === "function" || typeof secretStorage.setSecret === "function");
+        if (!hasSecretStorage) return;
+
+        let hasChanges = false;
+
+        for (const providerId in this.settings.providers) {
+            const provider = this.settings.providers[providerId];
+            if (provider.apiKey && !provider.apiKey.startsWith("secret:")) {
+                try {
+                    const secretId = `hand-markdown-ai-api-key-${providerId}`;
+                    const keyToSave = provider.apiKey.trim();
+
+                    if (typeof secretStorage.save === "function") {
+                        await secretStorage.save(secretId, keyToSave);
+                    } else {
+                        await secretStorage.setSecret(secretId, keyToSave);
+                    }
+
+                    provider.apiKey = `secret:${secretId}`;
+                    hasChanges = true;
+                } catch (e) {
+                    console.error(`[HandMarkdownAI] Failed to migrate API key for ${providerId} to Keychain:`, e);
+                }
+            }
+        }
+
+        if (hasChanges) {
+            await this.saveSettings();
+            new Notice("已自动将检测到的明文 API Key 迁移至 Keychain 安全存储");
+        }
+    }
+
     /**
      * 注册命令
      */
     private registerCommands() {
-        // 转换当前文件
         this.addCommand({
-            id: "convert-current-file",
-            name: "转换当前文件",
+            id: "smart-convert",
+            name: "转换为Markdown",
             hotkeys: [
                 {
                     modifiers: ["Mod", "Alt"],
@@ -73,31 +120,90 @@ export default class HandMarkdownAIPlugin extends Plugin {
                 }
             ],
             checkCallback: (checking: boolean) => {
-                const activeFile = this.app.workspace.getActiveFile();
-                if (!activeFile) {
-                    return false;
-                }
-
-                if (!ConversionService.isFileSupported(activeFile.path)) {
-                    return false;
-                }
-
                 if (!checking) {
-                    this.convertFile(activeFile.path);
+                    this.smartConvert();
                 }
-
                 return true;
             }
         });
+    }
 
-        // 选择文件夹并批量转换
-        this.addCommand({
-            id: "convert-folder",
-            name: "转换文件夹内所有文件",
-            callback: () => {
-                this.chooseFolderAndConvert();
+    private async smartConvert(target?: TAbstractFile) {
+        if (!this.conversionService.validateConfig()) {
+            new Notice("请先在设置中配置AI提供商", 5000);
+            this.openSettings();
+            return;
+        }
+
+        if (target instanceof TFolder) {
+            await this.convertFolder(target.path);
+            return;
+        }
+
+        if (target instanceof TFile) {
+            if (ConversionService.isFileSupported(target.path)) {
+                await this.smartConvertFile(target);
+                return;
             }
-        });
+        }
+
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView?.editor && activeView.file) {
+            const editor = activeView.editor;
+            let cursor: any;
+            try {
+                cursor = editor.getCursor?.("from") || editor.getCursor?.();
+            } catch {
+                cursor = editor.getCursor?.();
+            }
+
+            if (cursor && typeof cursor.line === "number" && typeof cursor.ch === "number") {
+                const line = editor.getLine(cursor.line);
+                const linkInfo = this.extractImageAtCursor(line, cursor.ch);
+                if (linkInfo) {
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, activeView.file.path);
+                    if (targetFile instanceof TFile && ConversionService.isFileSupported(targetFile.path)) {
+                        await this.convertLinkInEditor(linkInfo, editor, activeView, cursor.line);
+                        return;
+                    }
+                }
+            }
+        }
+
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && ConversionService.isFileSupported(activeFile.path)) {
+            await this.convertFile(activeFile.path);
+            return;
+        }
+
+        this.showConversionModal();
+    }
+
+    private async smartConvertFile(file: TFile) {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView?.editor && activeView.file) {
+            const editor = activeView.editor;
+            let cursor: any;
+            try {
+                cursor = editor.getCursor?.("from") || editor.getCursor?.();
+            } catch {
+                cursor = editor.getCursor?.();
+            }
+
+            if (cursor && typeof cursor.line === "number" && typeof cursor.ch === "number") {
+                const line = editor.getLine(cursor.line);
+                const linkInfo = this.extractImageAtCursor(line, cursor.ch);
+                if (linkInfo) {
+                    const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, activeView.file.path);
+                    if (targetFile && targetFile.path === file.path) {
+                        await this.convertLinkInEditor(linkInfo, editor, activeView, cursor.line);
+                        return;
+                    }
+                }
+            }
+        }
+
+        await this.convertFile(file.path);
     }
 
     /**
@@ -113,7 +219,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
                             .setTitle("转换为Markdown")
                             .setIcon("wand")
                             .onClick(async () => {
-                                await this.handleConvertFile(file);
+                                await this.smartConvert(file);
                             });
                     });
                 }
@@ -154,10 +260,46 @@ export default class HandMarkdownAIPlugin extends Plugin {
                             .setTitle("转换此文件夹内所有文件")
                             .setIcon("folder")
                             .onClick(() => {
-                                this.convertFolder(file.path);
+                                this.smartConvert(file);
                             });
                     });
                 }
+            })
+        );
+    }
+
+    private registerEditorLinkContextMenu() {
+        this.registerEvent(
+            this.app.workspace.on("editor-menu", (menu: Menu, editor: any, view: any) => {
+                if (!(view instanceof MarkdownView)) return;
+                if (!editor || !view?.file) return;
+
+                let cursor: any;
+                try {
+                    cursor = editor.getCursor?.("from") || editor.getCursor?.();
+                } catch {
+                    cursor = editor.getCursor?.();
+                }
+                if (!cursor || typeof cursor.line !== "number" || typeof cursor.ch !== "number") return;
+
+                const line = editor.getLine?.(cursor.line);
+                if (typeof line !== "string") return;
+
+                const linkInfo = this.extractImageAtCursor(line, cursor.ch);
+                if (!linkInfo) return;
+
+                const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, view.file.path);
+                if (!(targetFile instanceof TFile)) return;
+                if (!ConversionService.isFileSupported(targetFile.path)) return;
+
+                menu.addItem((item: MenuItem) => {
+                    item
+                        .setTitle("转换链接为Markdown并插入下方")
+                        .setIcon("wand")
+                        .onClick(async () => {
+                            await this.smartConvert();
+                        });
+                });
             })
         );
     }
@@ -202,49 +344,12 @@ export default class HandMarkdownAIPlugin extends Plugin {
                     item.setTitle("转换为Markdown")
                         .setIcon("wand")
                         .onClick(async () => {
-                            await this.handleConvertFile(file);
+                            await this.smartConvert(file);
                         });
                 });
                 menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
             }
         });
-    }
-
-    /**
-     * 统一的文件转换处理器
-     * 根据上下文决定是插入到编辑器还是创建新文件
-     */
-    private async handleConvertFile(file: TFile) {
-        // 验证配置
-        if (!this.conversionService.validateConfig()) {
-            new Notice("请先在设置中配置AI提供商", 5000);
-            this.openSettings();
-            return;
-        }
-
-        // 检查当前活动编辑器中是否有该文件的链接被选中
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView && activeView.editor) {
-            const editor = activeView.editor;
-            const cursor = editor.getCursor();
-            const line = editor.getLine(cursor.line);
-            const linkInfo = this.extractImageAtCursor(line, cursor.ch);
-
-            // 如果光标在链接上，且链接指向当前文件，则插入到编辑器
-            if (linkInfo) {
-                const currentFile = activeView.file;
-                const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, currentFile?.path || '');
-
-                if (targetFile && targetFile.path === file.path) {
-                    // 在编辑器中插入
-                    await this.convertLinkInEditor(linkInfo, editor, activeView, cursor.line);
-                    return;
-                }
-            }
-        }
-
-        // 否则创建新文件
-        await this.convertFile(file.path);
     }
 
     /**
@@ -550,9 +655,13 @@ export default class HandMarkdownAIPlugin extends Plugin {
      * 打开设置
      */
     private openSettings() {
-        // Obsidian会自动在设置中显示插件设置
-        // 用户可以通过 Ctrl/Cmd + , 打开设置
-        new Notice("请在设置中找到 Hand Markdown AI 插件进行配置", 5000);
+        const anyApp = this.app as any;
+        try {
+            anyApp?.setting?.open?.();
+            anyApp?.setting?.openTabById?.(this.manifest.id);
+        } catch {
+            new Notice("请在设置中找到 Hand Markdown AI 插件进行配置", 5000);
+        }
     }
 
     private toggleModel() {

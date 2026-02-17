@@ -2,6 +2,7 @@ import { MODEL_CATEGORIES } from "./constants";
 import type { PluginSettings } from "./types";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
+    useKeychain: true,
     providers: {
         openai: {
             apiKey: "",
@@ -34,19 +35,19 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     },
 
     models: {
-        "gemini-3-pro-preview": {
-            id: "gemini-3-pro-preview",
-            name: "Gemini 3 Pro Preview",
+        "gpt-4o-mini": {
+            id: "gpt-4o-mini",
+            name: "GPT-4o mini",
             provider: "openai",
-            model: "gemini-3-pro-preview",
+            model: "gpt-4o-mini",
             enabled: true,
             category: MODEL_CATEGORIES.MULTIMODAL
         },
-        "gemini-3-flash-preview": {
-            id: "gemini-3-flash-preview",
-            name: "Gemini 3 Flash Preview",
+        "gpt-4o": {
+            id: "gpt-4o",
+            name: "GPT-4o",
             provider: "openai",
-            model: "gemini-3-flash-preview",
+            model: "gpt-4o",
             enabled: true,
             category: MODEL_CATEGORIES.MULTIMODAL
         },
@@ -55,12 +56,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
             name: "GPT-5",
             provider: "openai",
             model: "gpt-5",
-            enabled: true,
+            enabled: false,
             category: MODEL_CATEGORIES.MULTIMODAL
         }
     },
 
-    currentModel: "gemini-3-flash-preview",
+    currentModel: "gpt-4o-mini",
     maxTokens: 5000,
     conversionPrompt: undefined,
 
