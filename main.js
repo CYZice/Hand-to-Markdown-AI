@@ -25,7 +25,7 @@ var __publicField = (obj, key, value) => {
 };
 
 // src/constants.ts
-var MODEL_CATEGORIES, SYSTEM_PROMPTS;
+var MODEL_CATEGORIES, SYSTEM_PROMPTS, PROVIDER_TYPES;
 var init_constants = __esm({
   "src/constants.ts"() {
     MODEL_CATEGORIES = {
@@ -39,6 +39,14 @@ var init_constants = __esm({
       continue: "\u4F60\u662F\u4E00\u4E2A\u4E13\u4E1A\u7684\u5199\u4F5C\u52A9\u624B\u3002\u8BF7\u6839\u636E\u7528\u6237\u63D0\u4F9B\u7684\u4E0A\u4E0B\u6587\uFF0C\u4ECE\u5149\u6807\u4F4D\u7F6E\u5F00\u59CB\u7EED\u5199\u540E\u7EED\u5185\u5BB9\u3002\u91CD\u8981\uFF1A\u53EA\u751F\u6210\u65B0\u7684\u5185\u5BB9\uFF0C\u4E0D\u8981\u91CD\u590D\u6216\u91CD\u5199\u5DF2\u6709\u7684\u5185\u5BB9\u3002",
       convert: "\u4F60\u662F\u4E00\u4E2A\u9762\u5411 Obsidian \u7684 OCR \u4E0E\u6587\u6863\u8F6C\u6362\u52A9\u624B\u3002\u5C06\u56FE\u7247\u5185\u5BB9\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316 Markdown\uFF1A\u4FDD\u6301\u539F\u6587\u8BED\u8A00\uFF0C\u4E0D\u8981\u7FFB\u8BD1\uFF1B\u4FDD\u7559\u6807\u9898\u5C42\u7EA7/\u5217\u8868/\u8868\u683C/\u4EE3\u7801\u5757\uFF1B\u516C\u5F0F\u7528 $...$ \u4E0E $$...$$\uFF1B\u770B\u4E0D\u6E05\u7684\u5185\u5BB9\u7528[\u65E0\u6CD5\u8FA8\u8BA4]/[\u4E0D\u786E\u5B9A]\u6807\u6CE8\uFF0C\u4E0D\u8981\u731C\u6D4B\uFF1B\u53EA\u8F93\u51FA Markdown \u6B63\u6587\uFF0C\u4E0D\u8981\u8F93\u51FA\u89E3\u91CA\u3002"
     };
+    PROVIDER_TYPES = [
+      { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1" },
+      { id: "anthropic", name: "Anthropic", defaultBaseUrl: "https://api.anthropic.com/v1" },
+      { id: "gemini", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta" },
+      { id: "deepseek", name: "DeepSeek", defaultBaseUrl: "https://api.deepseek.com/v1" },
+      { id: "ollama", name: "Ollama (Local)", defaultBaseUrl: "http://localhost:11434" },
+      { id: "custom", name: "Custom (OpenAI Compatible)", defaultBaseUrl: "" }
+    ];
   }
 });
 
@@ -61,29 +69,15 @@ var init_defaults = __esm({
           apiKey: "",
           baseUrl: "https://api.openai.com/v1",
           enabled: true,
-          name: "OpenAI",
+          name: "openai",
           type: "openai"
         },
-        anthropic: {
+        deepseek: {
           apiKey: "",
-          baseUrl: "https://api.anthropic.com/v1",
-          enabled: false,
-          name: "Anthropic",
-          type: "anthropic"
-        },
-        gemini: {
-          apiKey: "",
-          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-          enabled: false,
-          name: "Google Gemini",
-          type: "gemini"
-        },
-        ollama: {
-          apiKey: "",
-          baseUrl: "http://localhost:11434/v1",
-          enabled: false,
-          name: "Ollama",
-          type: "ollama"
+          baseUrl: "https://api.deepseek.com/v1",
+          enabled: true,
+          name: "deepseek",
+          type: "deepseek"
         }
       },
       models: {
@@ -138,6 +132,7 @@ var init_defaults = __esm({
         openai: "https://platform.openai.com/api-keys",
         anthropic: "https://console.anthropic.com/",
         gemini: "https://aistudio.google.com/app/apikey",
+        deepseek: "https://platform.deepseek.com/api_keys",
         ollama: "https://ollama.com/"
       }
     };
@@ -3481,15 +3476,7 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
   }
   addProviderSection(containerEl) {
     containerEl.createEl("h3", { text: "\u4F9B\u5E94\u5546\u3001API\u8BBE\u7F6E" });
-    containerEl.createEl("p", {
-      text: "\u5F53\u524D\u7248\u672C\u901A\u8FC7 OpenAI \u517C\u5BB9\u63A5\u53E3\u8C03\u7528\uFF08/v1/chat/completions\uFF09\u3002Claude/Gemini \u9700\u8981\u4F7F\u7528\u517C\u5BB9\u7F51\u5173\u6216\u8F6C\u53D1\u670D\u52A1\u3002",
-      attr: { style: "color: var(--text-muted); margin-bottom: 5px;" }
-    });
-    containerEl.createEl("p", {
-      text: "Base URL\uFF1A\u53EF\u586B\u5199\u7B2C\u4E09\u65B9\u517C\u5BB9\u5730\u5740\uFF08\u4F8B\u5982\u81EA\u5EFA\u8F6C\u53D1\u3001\u805A\u5408\u7F51\u5173\u3001Ollama \u7B49\uFF09\u3002",
-      attr: { style: "color: var(--text-muted); margin-bottom: 15px;" }
-    });
-    new import_obsidian8.Setting(containerEl).setName("\u4F7F\u7528 Obsidian Keychain \u5B89\u5168\u5B58\u50A8").setDesc("\u5F00\u542F\u540E\uFF0C\u65B0\u914D\u7F6E\u7684 API Key \u5C06\u5B58\u50A8\u5728\u7CFB\u7EDF\u94A5\u5319\u4E32\u4E2D").addToggle((toggle) => toggle.setValue(this.plugin.settings.useKeychain ?? true).onChange(async (value) => {
+    new import_obsidian8.Setting(containerEl).setName("\u4F7F\u7528 Obsidian Keychain \u5B89\u5168\u5B58\u50A8").setDesc("\u5F00\u542F\u540E\uFF0C\u65B0\u914D\u7F6E\u7684 API Key \u5C06\u5B58\u50A8\u5728\u7CFB\u7EDF\u94A5\u5319\u4E32\u4E2D (\u63A8\u8350)").addToggle((toggle) => toggle.setValue(this.plugin.settings.useKeychain ?? true).onChange(async (value) => {
       this.plugin.settings.useKeychain = value;
       await this.plugin.saveSettings();
       if (value) {
@@ -3511,16 +3498,18 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
     thead.createEl("th", { text: "Type" });
     thead.createEl("th", { text: "Actions" });
     const tbody = providerTable.createEl("tbody");
-    const builtInProviderIds = ["openai", "anthropic", "gemini", "ollama"];
     Object.keys(this.plugin.settings.providers).forEach((providerId) => {
       const provider = this.plugin.settings.providers[providerId];
       const row = tbody.createEl("tr");
       row.createEl("td", { text: providerId });
       row.createEl("td", { text: provider.type || "openai" });
       const actionsCell = row.createEl("td", { cls: "markdown-next-ai-actions-cell" });
-      const editBtn = actionsCell.createEl("button", { text: "\u7F16\u8F91" });
-      editBtn.onclick = () => this.showEditProviderModal(providerId);
-      if (!builtInProviderIds.includes(providerId)) {
+      if (["openai", "anthropic", "gemini", "deepseek", "ollama"].includes(providerId)) {
+        const editBtn = actionsCell.createEl("button", { text: "\u7F16\u8F91" });
+        editBtn.onclick = () => this.showEditProviderModal(providerId);
+      } else {
+        const editBtn = actionsCell.createEl("button", { text: "\u7F16\u8F91" });
+        editBtn.onclick = () => this.showEditProviderModal(providerId);
         const deleteBtn = actionsCell.createEl("button", { text: "\u5220\u9664" });
         deleteBtn.onclick = async () => {
           if (confirm(`\u786E\u5B9A\u8981\u5220\u9664\u4F9B\u5E94\u5546 "${providerId}" \uFF1F\u8FD9\u5C06\u540C\u65F6\u5220\u9664\u8BE5\u4F9B\u5E94\u5546\u4E0B\u7684\u6240\u6709\u6A21\u578B\u3002`)) {
@@ -3536,7 +3525,6 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         };
       }
     });
-    containerEl.createEl("hr");
   }
   addModelSection(containerEl) {
     const modelHeader = containerEl.createEl("div", { attr: { style: "display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:8px;" } });
@@ -3578,7 +3566,7 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         editBtn.onclick = () => this.showEditModelModal(model.id);
         const deleteBtn = mActionsCell.createEl("button", { text: "\u5220\u9664" });
         deleteBtn.onclick = async () => {
-          if (confirm(`\u786E\u5B9A\u8981\u5220\u9664\u6A21\u578B "${model.name || model.id}" \uFF1F`)) {
+          if (confirm(`\u786E\u5B9A\u8981\u5220\u9664\u6A21\u578B "${model.name}" \uFF1F`)) {
             if (this.plugin.settings.currentModel === model.id) {
               const otherEnabled = Object.keys(this.plugin.settings.models).find((id) => id !== model.id && this.plugin.settings.models[id].enabled);
               this.plugin.settings.currentModel = otherEnabled || "";
@@ -3596,11 +3584,11 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         attr: { colspan: "4", style: "text-align: center; color: var(--text-muted); font-style: italic; padding: 20px;" }
       });
     }
-    new import_obsidian8.Setting(containerEl).setName("\u5F53\u524D\u6A21\u578B").setDesc("\u9009\u62E9\u5F53\u524D\u4F7F\u7528\u7684AI\u6A21\u578B\uFF08\u8F6C\u6362\u56FE\u7247/PDF \u9700\u8981\u591A\u6A21\u6001\u6216\u89C6\u89C9\u6A21\u578B\uFF09").addDropdown((dropdown) => {
+    new import_obsidian8.Setting(containerEl).setName("\u5F53\u524D\u6A21\u578B").setDesc("\u9009\u62E9\u5F53\u524D\u4F7F\u7528\u7684AI\u6A21\u578B").addDropdown((dropdown) => {
       const enabledModels = Object.keys(this.plugin.settings.models).filter((id) => this.plugin.settings.models[id].enabled);
       enabledModels.forEach((id) => {
         const model = this.plugin.settings.models[id];
-        dropdown.addOption(id, `${model.name || model.model} (${model.provider})`);
+        dropdown.addOption(id, `${model.name} (${model.provider})`);
       });
       if (!enabledModels.includes(this.plugin.settings.currentModel) && enabledModels.length > 0) {
         this.plugin.settings.currentModel = enabledModels[0];
@@ -3611,41 +3599,19 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian8.Setting(containerEl).setName("\u6D4B\u8BD5API\u8FDE\u63A5").setDesc("\u5BF9\u5F53\u524D\u6A21\u578B\u53D1\u9001\u4E00\u4E2A\u6700\u5C0F\u8BF7\u6C42\uFF0C\u7528\u4E8E\u5FEB\u901F\u9A8C\u8BC1 Base URL / API Key / Model").addButton(
-      (button) => button.setButtonText("\u6D4B\u8BD5\u8FDE\u63A5").onClick(async () => {
-        const originalText = button.buttonEl.textContent || "\u6D4B\u8BD5\u8FDE\u63A5";
-        button.setButtonText("\u6D4B\u8BD5\u4E2D...");
-        try {
-          const result = await this.plugin.aiService.testConnection();
-          if (result.success) {
-            new import_obsidian8.Notice("\u2705 API\u8FDE\u63A5\u6210\u529F");
-          } else {
-            new import_obsidian8.Notice("\u274C API\u8FDE\u63A5\u5931\u8D25: " + (result.message || "\u672A\u77E5\u9519\u8BEF"));
-          }
-        } catch (error) {
-          new import_obsidian8.Notice("\u274C \u6D4B\u8BD5\u5931\u8D25: " + (error?.message || String(error)));
-        } finally {
-          button.setButtonText(originalText);
-        }
-      })
-    );
-    containerEl.createEl("hr");
   }
-  getSecretStorage() {
-    return this.app.secretStorage || this.app.keychain || window.secretStorage || this.app.vault?.secretStorage;
-  }
-  updateApiKeyDesc(setting, providerId, type) {
+  updateApiKeyDesc(setting, type) {
     const descEl = setting.descEl;
     descEl.empty();
     descEl.createSpan({ text: "\u8BF7\u8F93\u5165 API Key " });
-    const providerType = type || "";
     const links = {
       openai: "https://platform.openai.com/api-keys",
       anthropic: "https://console.anthropic.com/",
       gemini: "https://aistudio.google.com/app/apikey",
+      deepseek: "https://platform.deepseek.com/api_keys",
       ollama: "https://ollama.com/"
     };
-    const link = this.plugin.settings.apiKeyLinks && (this.plugin.settings.apiKeyLinks[providerId] || (providerType ? this.plugin.settings.apiKeyLinks[providerType] : void 0)) || links[providerId] || (providerType ? links[providerType] : void 0);
+    const link = links[type];
     if (link) {
       descEl.createEl("a", {
         text: "(\u83B7\u53D6 Key)",
@@ -3653,58 +3619,123 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
       });
     }
   }
-  showProviderModal(mode, providerId) {
+  showAddProviderModal() {
     const modal = new import_obsidian8.Modal(this.app);
-    modal.titleEl.setText(mode === "add" ? "\u6DFB\u52A0\u4F9B\u5E94\u5546 (Add Provider)" : `\u7F16\u8F91\u4F9B\u5E94\u5546: ${providerId}`);
-    const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
-    const provider = providerId ? this.plugin.settings.providers[providerId] : { apiKey: "", baseUrl: "", enabled: true, type: "openai", name: "" };
-    let idValue = providerId || "";
-    let type = provider.type || "openai";
-    let apiKey = provider.apiKey || "";
-    let baseUrl = provider.baseUrl || "";
-    let enabled = provider.enabled !== false;
+    modal.titleEl.setText("\u6DFB\u52A0\u4F9B\u5E94\u5546 (Add Provider)");
+    const { contentEl } = modal;
+    let id = "";
+    let type = "openai";
+    let apiKey = "";
+    let baseUrl = "";
     let useKeychain = this.plugin.settings.useKeychain ?? true;
-    const secretStorage = this.getSecretStorage();
+    const secretStorage = this.app.secretStorage || this.app.keychain || window.secretStorage || this.app.vault?.secretStorage;
     const hasSecretStorage = secretStorage && (typeof secretStorage.save === "function" || typeof secretStorage.setSecret === "function");
     if (!hasSecretStorage)
       useKeychain = false;
-    let apiKeySetting;
-    new import_obsidian8.Setting(content).setName("ID").setDesc("\u7528\u4E8E\u5F15\u7528\u7684\u552F\u4E00\u6807\u8BC6").addText((text) => {
-      text.setPlaceholder("my-provider").setValue(idValue).onChange((value) => idValue = value.trim());
-      if (mode === "edit")
-        text.setDisabled(true);
-    });
-    new import_obsidian8.Setting(content).setName("\u663E\u793A\u540D\u79F0").addText(
-      (text) => text.setPlaceholder("OpenAI").setValue(provider.name || "").onChange((value) => provider.name = value.trim())
-    );
-    new import_obsidian8.Setting(content).setName("\u7C7B\u578B").setDesc("openai \u517C\u5BB9\u7C7B\u578B\u6807\u8BC6").addDropdown((dropdown) => {
-      const items = [
-        { id: "openai", name: "OpenAI (\u517C\u5BB9)" },
-        { id: "anthropic", name: "Anthropic" },
-        { id: "gemini", name: "Gemini" },
-        { id: "ollama", name: "Ollama" }
-      ];
-      items.forEach((t) => dropdown.addOption(t.id, t.name));
-      dropdown.addOption("openai-compatible", "OpenAI Compatible (\u5176\u5B83)");
+    new import_obsidian8.Setting(contentEl).setName("ID / Name").setDesc("\u552F\u4E00\u7684\u4F9B\u5E94\u5546\u6807\u8BC6\u7B26 (\u4F8B\u5982: my-openai)").addText((text) => text.setPlaceholder("openai-1").onChange((v) => id = v.trim()));
+    const typeSetting = new import_obsidian8.Setting(contentEl).setName("\u7C7B\u578B (Type)").setDesc("API \u534F\u8BAE\u7C7B\u578B").addDropdown((dropdown) => {
+      PROVIDER_TYPES.forEach(
+        (t) => dropdown.addOption(t.id, t.name)
+      );
       dropdown.setValue(type).onChange((v) => {
         type = v;
-        provider.type = v;
-        if (apiKeySetting) {
-          this.updateApiKeyDesc(apiKeySetting, idValue || providerId || "", type);
+        this.updateApiKeyDesc(apiKeySetting, type);
+        const defaultUrl = PROVIDER_TYPES.find((p) => p.id === v)?.defaultBaseUrl;
+        if (defaultUrl && !baseUrl && baseUrlComp) {
+          baseUrl = defaultUrl;
+          baseUrlComp.setValue(defaultUrl);
         }
       });
     });
-    new import_obsidian8.Setting(content).setName("Base URL").setDesc("\u53EF\u9009\uFF0COpenAI \u517C\u5BB9\u63A5\u53E3\u5730\u5740").addText(
-      (text) => text.setPlaceholder("https://api.openai.com/v1").setValue(baseUrl || "").onChange((value) => {
-        baseUrl = value.trim();
-        provider.baseUrl = baseUrl;
-      })
-    );
-    const otherProvidersWithSecrets = Object.entries(this.plugin.settings.providers).filter(([id, p]) => id !== (providerId || "") && p.apiKey && p.apiKey.startsWith("secret:")).map(([id, p]) => ({ id, name: p.name || id, secretRef: p.apiKey }));
-    apiKeySetting = new import_obsidian8.Setting(content).setName("API Key").setDesc("\u8BF7\u8F93\u5165 API Key");
+    const apiKeySetting = new import_obsidian8.Setting(contentEl).setName("API Key").setDesc("\u8BF7\u8F93\u5165 API Key");
+    let apiKeyComp;
+    apiKeySetting.addText((text) => {
+      apiKeyComp = text;
+      text.inputEl.type = "password";
+      text.setPlaceholder(useKeychain ? "\u5C06\u5728\u4FDD\u5B58\u65F6\u5B58\u50A8\u5230 Keychain" : "\u8BF7\u8F93\u5165 API Key").onChange((v) => apiKey = v.trim());
+    });
+    this.updateApiKeyDesc(apiKeySetting, type);
+    let baseUrlComp;
+    new import_obsidian8.Setting(contentEl).setName("Base URL").setDesc("\u53EF\u9009\uFF1A\u8BBE\u7F6E\u81EA\u5B9A\u4E49 Base URL").addText((text) => {
+      baseUrlComp = text;
+      text.setPlaceholder("https://api.example.com/v1").setValue(PROVIDER_TYPES.find((p) => p.id === type)?.defaultBaseUrl || "").onChange((v) => baseUrl = v.trim());
+      baseUrl = PROVIDER_TYPES.find((p) => p.id === type)?.defaultBaseUrl || "";
+    });
+    const btns = contentEl.createEl("div", { attr: { style: "display:flex;justify-content:flex-end;gap:10px;margin-top:15px;" } });
+    const cancelBtn = btns.createEl("button", { text: "\u53D6\u6D88" });
+    cancelBtn.onclick = () => modal.close();
+    const saveBtn = btns.createEl("button", { text: "\u4FDD\u5B58", cls: "mod-cta" });
+    saveBtn.onclick = async () => {
+      if (!id) {
+        new import_obsidian8.Notice("ID \u4E0D\u80FD\u4E3A\u7A7A");
+        return;
+      }
+      if (this.plugin.settings.providers[id]) {
+        new import_obsidian8.Notice("\u8BE5 ID \u5DF2\u5B58\u5728");
+        return;
+      }
+      this.plugin.settings.providers[id] = {
+        name: id,
+        type,
+        apiKey: "",
+        baseUrl,
+        enabled: true
+      };
+      if (apiKey) {
+        if (useKeychain && hasSecretStorage) {
+          const secretId = `hand-markdown-ai-api-key-${id}`;
+          try {
+            if (typeof secretStorage.save === "function") {
+              await secretStorage.save(secretId, apiKey);
+            } else {
+              await secretStorage.setSecret(secretId, apiKey);
+            }
+            this.plugin.settings.providers[id].apiKey = `secret:${secretId}`;
+          } catch (e) {
+            console.error("Keychain save failed", e);
+            new import_obsidian8.Notice("Keychain \u4FDD\u5B58\u5931\u8D25\uFF0C\u5DF2\u4F7F\u7528\u666E\u901A\u5B58\u50A8");
+            this.plugin.settings.providers[id].apiKey = apiKey;
+          }
+        } else {
+          this.plugin.settings.providers[id].apiKey = apiKey;
+        }
+      }
+      await this.plugin.saveSettings();
+      this.display();
+      modal.close();
+    };
+    modal.open();
+  }
+  showEditProviderModal(providerId) {
+    const modal = new import_obsidian8.Modal(this.app);
+    modal.titleEl.setText(`\u7F16\u8F91\u4F9B\u5E94\u5546: ${providerId}`);
+    const { contentEl } = modal;
+    const provider = this.plugin.settings.providers[providerId];
+    let type = provider.type || "openai";
+    let apiKey = provider.apiKey || "";
+    let baseUrl = provider.baseUrl || "";
+    let useKeychain = this.plugin.settings.useKeychain ?? true;
+    const secretStorage = this.app.secretStorage || this.app.keychain || window.secretStorage || this.app.vault?.secretStorage;
+    const hasSecretStorage = secretStorage && (typeof secretStorage.save === "function" || typeof secretStorage.setSecret === "function");
+    if (apiKey.startsWith("secret:")) {
+      useKeychain = true;
+    } else if (!apiKey && (this.plugin.settings.useKeychain ?? true) && hasSecretStorage) {
+      useKeychain = true;
+    }
+    const otherProvidersWithSecrets = Object.entries(this.plugin.settings.providers).filter(([id, p]) => id !== providerId && p.apiKey && p.apiKey.startsWith("secret:")).map(([id, p]) => ({ id, name: p.name || id, secretRef: p.apiKey }));
+    const apiKeySetting = new import_obsidian8.Setting(contentEl).setName("API Key").setDesc("\u8BF7\u8F93\u5165 API Key");
+    new import_obsidian8.Setting(contentEl).setName("\u7C7B\u578B (Type)").setDesc("API \u534F\u8BAE\u7C7B\u578B").addDropdown((dropdown) => {
+      PROVIDER_TYPES.forEach(
+        (t) => dropdown.addOption(t.id, t.name)
+      );
+      dropdown.setValue(type).onChange((v) => {
+        type = v;
+        this.updateApiKeyDesc(apiKeySetting, type);
+      });
+    });
     let apiKeyComp;
     if (otherProvidersWithSecrets.length > 0) {
-      new import_obsidian8.Setting(content).setName("\u590D\u7528\u5DF2\u6709 Key").setDesc("\u9009\u62E9\u590D\u7528\u5176\u4ED6\u4F9B\u5E94\u5546\u5DF2\u914D\u7F6E\u7684 Keychain \u5BC6\u94A5").addDropdown((dropdown) => {
+      new import_obsidian8.Setting(contentEl).setName("\u590D\u7528\u5DF2\u6709 Key").setDesc("\u9009\u62E9\u590D\u7528\u5176\u4ED6\u4F9B\u5E94\u5546\u5DF2\u914D\u7F6E\u7684 Keychain \u5BC6\u94A5").addDropdown((dropdown) => {
         dropdown.addOption("", "\u4E0D\u590D\u7528 (\u9ED8\u8BA4)");
         otherProvidersWithSecrets.forEach((p) => dropdown.addOption(p.secretRef, `${p.name} (${p.id})`));
         if (apiKey && apiKey.startsWith("secret:") && otherProvidersWithSecrets.some((p) => p.secretRef === apiKey)) {
@@ -3714,7 +3745,6 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
           if (value) {
             apiKey = value;
             useKeychain = true;
-            provider.apiKey = value;
             if (apiKeyComp) {
               apiKeyComp.setValue("");
               apiKeyComp.setPlaceholder(`\u5DF2\u590D\u7528 ${otherProvidersWithSecrets.find((p) => p.secretRef === value)?.name} \u7684 Key`);
@@ -3722,7 +3752,6 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
             }
           } else {
             apiKey = "";
-            provider.apiKey = "";
             if (apiKeyComp) {
               apiKeyComp.setDisabled(false);
               apiKeyComp.setPlaceholder(useKeychain ? "\u5C06\u5728\u4FDD\u5B58\u65F6\u5B58\u50A8\u5230 Keychain" : "\u8BF7\u8F93\u5165 API Key");
@@ -3744,72 +3773,47 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         text.setPlaceholder(useKeychain ? "\u5C06\u5728\u4FDD\u5B58\u65F6\u5B58\u50A8\u5230 Keychain" : "\u8BF7\u8F93\u5165 API Key");
         text.setValue(apiKey);
       }
-      text.onChange((value) => {
-        apiKey = value.trim();
+      text.onChange((v) => {
+        apiKey = v.trim();
       });
     });
-    this.updateApiKeyDesc(apiKeySetting, idValue || providerId || "", type);
-    new import_obsidian8.Setting(content).setName("\u542F\u7528").addToggle(
-      (toggle) => toggle.setValue(enabled).onChange((value) => {
-        enabled = value;
-        provider.enabled = value;
-      })
-    );
-    const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
-    const cancelBtn = footer.createEl("button", { text: "\u53D6\u6D88" });
-    cancelBtn.onclick = () => modal.close();
-    const saveBtn = footer.createEl("button", { text: "\u4FDD\u5B58" });
+    this.updateApiKeyDesc(apiKeySetting, type);
+    new import_obsidian8.Setting(contentEl).setName("Base URL").setDesc("\u53EF\u9009\uFF1A\u8BBE\u7F6E\u81EA\u5B9A\u4E49 Base URL").addText((text) => text.setPlaceholder("https://api.example.com/v1").setValue(baseUrl).onChange((v) => baseUrl = v.trim()));
+    const btns = contentEl.createEl("div", { attr: { style: "display:flex;justify-content:flex-end;gap:10px;margin-top:15px;" } });
+    btns.createEl("button", { text: "\u53D6\u6D88" }).onclick = () => modal.close();
+    const saveBtn = btns.createEl("button", { text: "\u4FDD\u5B58", cls: "mod-cta" });
     saveBtn.onclick = async () => {
-      if (!idValue) {
-        new import_obsidian8.Notice("ID \u4E0D\u80FD\u4E3A\u7A7A");
-        return;
-      }
-      if (mode === "add" && this.plugin.settings.providers[idValue]) {
-        new import_obsidian8.Notice("ID \u5DF2\u5B58\u5728");
-        return;
-      }
-      const targetProviderId = mode === "add" ? idValue : providerId || idValue;
-      if (!this.plugin.settings.providers[targetProviderId]) {
-        this.plugin.settings.providers[targetProviderId] = { apiKey: "", baseUrl: "", enabled: true };
-      }
-      this.plugin.settings.providers[targetProviderId].name = provider.name || targetProviderId;
-      this.plugin.settings.providers[targetProviderId].type = type;
-      this.plugin.settings.providers[targetProviderId].baseUrl = baseUrl;
-      this.plugin.settings.providers[targetProviderId].enabled = enabled;
+      this.plugin.settings.providers[providerId].name = providerId;
+      this.plugin.settings.providers[providerId].type = type;
+      this.plugin.settings.providers[providerId].baseUrl = baseUrl;
       const isReusing = apiKey.startsWith("secret:") && otherProvidersWithSecrets.some((p) => p.secretRef === apiKey);
       if (isReusing) {
-        this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
+        this.plugin.settings.providers[providerId].apiKey = apiKey;
       } else if (apiKey && !apiKey.startsWith("secret:")) {
         if (useKeychain && hasSecretStorage) {
-          const secretId = `hand-markdown-ai-api-key-${targetProviderId}`;
+          const secretId = `hand-markdown-ai-api-key-${providerId}`;
           try {
             if (typeof secretStorage.save === "function") {
               await secretStorage.save(secretId, apiKey);
             } else {
               await secretStorage.setSecret(secretId, apiKey);
             }
-            this.plugin.settings.providers[targetProviderId].apiKey = `secret:${secretId}`;
+            this.plugin.settings.providers[providerId].apiKey = `secret:${secretId}`;
           } catch (e) {
             new import_obsidian8.Notice("Keychain \u4FDD\u5B58\u5931\u8D25\uFF0C\u5DF2\u4F7F\u7528\u666E\u901A\u5B58\u50A8");
-            this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
+            this.plugin.settings.providers[providerId].apiKey = apiKey;
           }
         } else {
-          this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
+          this.plugin.settings.providers[providerId].apiKey = apiKey;
         }
       } else if (apiKey === "") {
-        this.plugin.settings.providers[targetProviderId].apiKey = "";
+        this.plugin.settings.providers[providerId].apiKey = "";
       }
       await this.plugin.saveSettings();
       this.display();
       modal.close();
     };
     modal.open();
-  }
-  showAddProviderModal() {
-    this.showProviderModal("add");
-  }
-  showEditProviderModal(providerId) {
-    this.showProviderModal("edit", providerId);
   }
   async fetchModels(providerId) {
     const provider = this.plugin.settings.providers[providerId];
@@ -3950,16 +3954,10 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
       }
     }));
     const advancedDetails = contentEl.createEl("details");
-    advancedDetails.createEl("summary", { text: "\u9AD8\u7EA7\u8BBE\u7F6E (Advanced: Internal ID / Category)", attr: { style: "color: var(--text-muted); cursor: pointer; margin-bottom: 10px;" } });
+    advancedDetails.createEl("summary", { text: "\u9AD8\u7EA7\u8BBE\u7F6E (Advanced: Internal ID)", attr: { style: "color: var(--text-muted); cursor: pointer; margin-bottom: 10px;" } });
     new import_obsidian8.Setting(advancedDetails).setName("\u63D2\u4EF6\u5185\u90E8 ID").setDesc("\u63D2\u4EF6\u914D\u7F6E\u4E2D\u4F7F\u7528\u7684\u552F\u4E00\u952E\u503C\uFF0C\u901A\u5E38\u65E0\u9700\u4FEE\u6539").addText((text) => {
       internalIdInput = text;
       text.onChange((v) => internalId = v.trim());
-    });
-    let chosenCategory = category;
-    new import_obsidian8.Setting(advancedDetails).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
-      Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
-      drop.setValue(String(chosenCategory));
-      drop.onChange((v) => chosenCategory = v);
     });
     const btns = contentEl.createEl("div", { attr: { style: "display:flex;gap:10px;margin-top:20px;justify-content:flex-end;" } });
     btns.createEl("button", { text: "\u53D6\u6D88" }).onclick = () => modal.close();
@@ -3979,7 +3977,7 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         provider: providerId,
         model: apiModelId,
         enabled: true,
-        category: chosenCategory
+        category
       };
       this.ensureCurrentModelValid();
       await this.plugin.saveSettings();
@@ -3996,13 +3994,11 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
     const { contentEl } = modal;
     let providerId = m.provider;
     let apiModelId = m.model || "";
-    let category = m.category || MODEL_CATEGORIES.TEXT;
     let apiModelIdInput;
     let suggest;
     new import_obsidian8.Setting(contentEl).setName("\u4F9B\u5E94\u5546 (Provider)").setDesc("\u66F4\u6539\u8BE5\u6A21\u578B\u6240\u5C5E\u7684\u670D\u52A1\u5546").addDropdown((dropdown) => {
       Object.keys(this.plugin.settings.providers).forEach((pId) => {
-        const p = this.plugin.settings.providers[pId];
-        dropdown.addOption(pId, `${p.name || pId} (${p.type || "openai"})`);
+        dropdown.addOption(pId, pId);
       });
       dropdown.setValue(providerId);
       dropdown.onChange((v) => {
@@ -4029,11 +4025,6 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         apiModelIdInput.inputEl.focus();
       }
     }));
-    new import_obsidian8.Setting(contentEl).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
-      Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
-      drop.setValue(String(category));
-      drop.onChange((v) => category = v);
-    });
     const btns = contentEl.createEl("div", { attr: { style: "display:flex;gap:10px;margin-top:20px;justify-content:flex-end;" } });
     btns.createEl("button", { text: "\u53D6\u6D88" }).onclick = () => modal.close();
     const save = btns.createEl("button", { text: "\u4FDD\u5B58\u66F4\u6539", cls: "mod-cta" });
@@ -4046,8 +4037,7 @@ var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
         ...m,
         provider: providerId,
         model: apiModelId,
-        name: apiModelId,
-        category
+        name: apiModelId
       };
       this.ensureCurrentModelValid();
       await this.plugin.saveSettings();

@@ -1,35 +1,79 @@
-/* Config tables styling (mimic Markdown-Next-AI) */
 .markdown-next-ai-config-table {
     width: 100%;
     border-collapse: collapse;
+    margin: 12px 0;
+    background: var(--background-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--background-modifier-border);
 }
 
-.markdown-next-ai-config-table thead th {
+.markdown-next-ai-config-table th {
     background: var(--background-secondary);
-    padding: 8px;
+    color: var(--text-normal);
+    font-weight: 500;
+    padding: 8px 12px;
     text-align: left;
-    font-weight: 600;
-    border-bottom: 1px solid var(--background-modifier-border);
+    border-bottom: 2px solid var(--background-modifier-border);
+    font-size: 0.85em;
+    white-space: nowrap;
 }
 
 .markdown-next-ai-config-table td {
-    padding: 8px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+    font-size: 0.85em;
+    vertical-align: middle;
 }
 
-.markdown-next-ai-api-key-cell button.markdown-next-ai-settings-btn {
-    padding: 4px 8px;
+.markdown-next-ai-config-table tr:last-child td {
+    border-bottom: none;
+}
+
+.markdown-next-ai-config-table tr:hover {
+    background: var(--background-modifier-hover);
+}
+
+.markdown-next-ai-config-table .markdown-next-ai-actions-cell {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.markdown-next-ai-config-table .markdown-next-ai-enable-cell {
+    text-align: center;
+    width: 1%;
+}
+
+.markdown-next-ai-config-table button {
+    background: var(--interactive-normal);
+    color: var(--text-normal);
     border: 1px solid var(--background-modifier-border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    margin-right: 6px;
+    transition: background 0.15s ease;
+}
+
+.markdown-next-ai-config-table button:hover {
+    background: var(--interactive-hover);
+}
+
+.markdown-next-ai-config-table select {
     background: var(--background-primary);
     color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
-    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.85em;
 }
 
-.markdown-next-ai-actions-cell button {
-    padding: 4px 12px;
-    border-radius: 4px;
-    cursor: pointer;
+.markdown-next-ai-config-table select:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
 }
 
 /**

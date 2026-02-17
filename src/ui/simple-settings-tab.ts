@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal, Modal, Notice, PluginSettingTab, Setting, TAbstractFile, TFolder, requestUrl, type RequestUrlParam } from "obsidian";
-import { MODEL_CATEGORIES } from "../constants";
+import { MODEL_CATEGORIES, PROVIDER_TYPES } from "../constants";
 import { DEFAULT_CONVERSION_PROMPT } from "../defaults";
 import type HandMarkdownAIPlugin from "../main";
 import type { APIModelConfig, ModelCategory } from "../types";
@@ -152,18 +152,10 @@ export class SimpleSettingsTab extends PluginSettingTab {
 
     private addProviderSection(containerEl: HTMLElement) {
         containerEl.createEl("h3", { text: "供应商、API设置" });
-        containerEl.createEl("p", {
-            text: "当前版本通过 OpenAI 兼容接口调用（/v1/chat/completions）。Claude/Gemini 需要使用兼容网关或转发服务。",
-            attr: { style: "color: var(--text-muted); margin-bottom: 5px;" }
-        });
-        containerEl.createEl("p", {
-            text: "Base URL：可填写第三方兼容地址（例如自建转发、聚合网关、Ollama 等）。",
-            attr: { style: "color: var(--text-muted); margin-bottom: 15px;" }
-        });
 
         new Setting(containerEl)
             .setName("使用 Obsidian Keychain 安全存储")
-            .setDesc("开启后，新配置的 API Key 将存储在系统钥匙串中")
+            .setDesc("开启后，新配置的 API Key 将存储在系统钥匙串中 (推荐)")
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.useKeychain ?? true)
                 .onChange(async (value) => {
@@ -191,7 +183,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
         thead.createEl("th", { text: "Actions" });
 
         const tbody = providerTable.createEl("tbody");
-        const builtInProviderIds = ["openai", "anthropic", "gemini", "ollama"];
         Object.keys(this.plugin.settings.providers).forEach(providerId => {
             const provider = this.plugin.settings.providers[providerId];
             const row = tbody.createEl("tr");
@@ -199,10 +190,12 @@ export class SimpleSettingsTab extends PluginSettingTab {
             row.createEl("td", { text: provider.type || "openai" });
 
             const actionsCell = row.createEl("td", { cls: "markdown-next-ai-actions-cell" });
-            const editBtn = actionsCell.createEl("button", { text: "编辑" });
-            editBtn.onclick = () => this.showEditProviderModal(providerId);
-
-            if (!builtInProviderIds.includes(providerId)) {
+            if (["openai", "anthropic", "gemini", "deepseek", "ollama"].includes(providerId)) {
+                const editBtn = actionsCell.createEl("button", { text: "编辑" });
+                editBtn.onclick = () => this.showEditProviderModal(providerId);
+            } else {
+                const editBtn = actionsCell.createEl("button", { text: "编辑" });
+                editBtn.onclick = () => this.showEditProviderModal(providerId);
                 const deleteBtn = actionsCell.createEl("button", { text: "删除" });
                 deleteBtn.onclick = async () => {
                     if (confirm(`确定要删除供应商 "${providerId}" ？这将同时删除该供应商下的所有模型。`)) {
@@ -218,8 +211,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 };
             }
         });
-
-        containerEl.createEl("hr");
     }
 
     private addModelSection(containerEl: HTMLElement) {
@@ -267,7 +258,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 editBtn.onclick = () => this.showEditModelModal(model.id);
                 const deleteBtn = mActionsCell.createEl("button", { text: "删除" });
                 deleteBtn.onclick = async () => {
-                    if (confirm(`确定要删除模型 "${model.name || model.id}" ？`)) {
+                    if (confirm(`确定要删除模型 "${model.name}" ？`)) {
                         if (this.plugin.settings.currentModel === model.id) {
                             const otherEnabled = Object.keys(this.plugin.settings.models).find(id => id !== model.id && this.plugin.settings.models[id].enabled);
                             this.plugin.settings.currentModel = otherEnabled || "";
@@ -288,14 +279,14 @@ export class SimpleSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("当前模型")
-            .setDesc("选择当前使用的AI模型（转换图片/PDF 需要多模态或视觉模型）")
+            .setDesc("选择当前使用的AI模型")
             .addDropdown(dropdown => {
                 const enabledModels = Object.keys(this.plugin.settings.models)
                     .filter(id => this.plugin.settings.models[id].enabled);
 
                 enabledModels.forEach(id => {
                     const model = this.plugin.settings.models[id];
-                    dropdown.addOption(id, `${model.name || model.model} (${model.provider})`);
+                    dropdown.addOption(id, `${model.name} (${model.provider})`);
                 });
 
                 if (!enabledModels.includes(this.plugin.settings.currentModel) && enabledModels.length > 0) {
@@ -309,55 +300,22 @@ export class SimpleSettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
-
-        // 测试API连接（对齐 Markdown-Next-AI 的交互）
-        new Setting(containerEl)
-            .setName("测试API连接")
-            .setDesc("对当前模型发送一个最小请求，用于快速验证 Base URL / API Key / Model")
-            .addButton(button => button
-                .setButtonText("测试连接")
-                .onClick(async () => {
-                    const originalText = button.buttonEl.textContent || "测试连接";
-                    button.setButtonText("测试中...");
-                    try {
-                        const result = await this.plugin.aiService.testConnection();
-                        if (result.success) {
-                            new Notice("✅ API连接成功");
-                        } else {
-                            new Notice("❌ API连接失败: " + (result.message || "未知错误"));
-                        }
-                    } catch (error: any) {
-                        new Notice("❌ 测试失败: " + (error?.message || String(error)));
-                    } finally {
-                        button.setButtonText(originalText);
-                    }
-                })
-            );
-
-        containerEl.createEl("hr");
     }
 
-    private getSecretStorage(): any {
-        return (this.app as any).secretStorage || (this.app as any).keychain || (window as any).secretStorage || (this.app as any).vault?.secretStorage;
-    }
-
-    private updateApiKeyDesc(setting: Setting, providerId: string, type: string) {
+    private updateApiKeyDesc(setting: Setting, type: string) {
         const descEl = setting.descEl;
         descEl.empty();
         descEl.createSpan({ text: "请输入 API Key " });
 
-        const providerType = type || "";
         const links: Record<string, string> = {
             openai: "https://platform.openai.com/api-keys",
             anthropic: "https://console.anthropic.com/",
             gemini: "https://aistudio.google.com/app/apikey",
+            deepseek: "https://platform.deepseek.com/api_keys",
             ollama: "https://ollama.com/"
         };
 
-        const link =
-            (this.plugin.settings.apiKeyLinks && (this.plugin.settings.apiKeyLinks[providerId] || (providerType ? this.plugin.settings.apiKeyLinks[providerType] : undefined))) ||
-            links[providerId] ||
-            (providerType ? links[providerType] : undefined);
+        const link = links[type];
 
         if (link) {
             descEl.createEl("a", {
@@ -367,89 +325,168 @@ export class SimpleSettingsTab extends PluginSettingTab {
         }
     }
 
-    private showProviderModal(mode: "add" | "edit", providerId?: string) {
+    private showAddProviderModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(mode === "add" ? "添加供应商 (Add Provider)" : `编辑供应商: ${providerId}`);
+        modal.titleEl.setText("添加供应商 (Add Provider)");
+        const { contentEl } = modal;
 
-        const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
-
-        const provider = providerId ? this.plugin.settings.providers[providerId] : { apiKey: "", baseUrl: "", enabled: true, type: "openai", name: "" };
-
-        let idValue = providerId || "";
-        let type = provider.type || "openai";
-        let apiKey = provider.apiKey || "";
-        let baseUrl = provider.baseUrl || "";
-        let enabled = provider.enabled !== false;
-
+        let id = "";
+        let type = "openai";
+        let apiKey = "";
+        let baseUrl = "";
         let useKeychain = this.plugin.settings.useKeychain ?? true;
-        const secretStorage = this.getSecretStorage();
+
+        const secretStorage = (this.app as any).secretStorage || (this.app as any).keychain || (window as any).secretStorage || (this.app as any).vault?.secretStorage;
         const hasSecretStorage = secretStorage && (typeof secretStorage.save === "function" || typeof secretStorage.setSecret === "function");
         if (!hasSecretStorage) useKeychain = false;
 
-        let apiKeySetting: Setting;
-
-        new Setting(content)
-            .setName("ID")
-            .setDesc("用于引用的唯一标识")
-            .addText(text => {
-                text.setPlaceholder("my-provider")
-                    .setValue(idValue)
-                    .onChange(value => idValue = value.trim());
-                if (mode === "edit") text.setDisabled(true);
-            });
-
-        new Setting(content)
-            .setName("显示名称")
+        new Setting(contentEl)
+            .setName("ID / Name")
+            .setDesc("唯一的供应商标识符 (例如: my-openai)")
             .addText(text => text
-                .setPlaceholder("OpenAI")
-                .setValue(provider.name || "")
-                .onChange(value => provider.name = value.trim())
-            );
+                .setPlaceholder("openai-1")
+                .onChange(v => id = v.trim()));
 
-        new Setting(content)
-            .setName("类型")
-            .setDesc("openai 兼容类型标识")
+        const typeSetting = new Setting(contentEl)
+            .setName("类型 (Type)")
+            .setDesc("API 协议类型")
             .addDropdown(dropdown => {
-                const items = [
-                    { id: "openai", name: "OpenAI (兼容)" },
-                    { id: "anthropic", name: "Anthropic" },
-                    { id: "gemini", name: "Gemini" },
-                    { id: "ollama", name: "Ollama" }
-                ];
-                items.forEach(t => dropdown.addOption(t.id, t.name));
-                dropdown.addOption("openai-compatible", "OpenAI Compatible (其它)");
-                dropdown.setValue(type).onChange(v => {
-                    type = v;
-                    provider.type = v;
-                    if (apiKeySetting) {
-                        this.updateApiKeyDesc(apiKeySetting, idValue || providerId || "", type);
-                    }
-                });
+                PROVIDER_TYPES.forEach((t: any) =>
+                    dropdown.addOption(t.id, t.name)
+                );
+                dropdown.setValue(type)
+                    .onChange(v => {
+                        type = v;
+                        this.updateApiKeyDesc(apiKeySetting, type);
+                        const defaultUrl = PROVIDER_TYPES.find((p: any) => p.id === v)?.defaultBaseUrl;
+                        if (defaultUrl && !baseUrl && baseUrlComp) {
+                            baseUrl = defaultUrl;
+                            baseUrlComp.setValue(defaultUrl);
+                        }
+                    });
             });
 
-        new Setting(content)
-            .setName("Base URL")
-            .setDesc("可选，OpenAI 兼容接口地址")
-            .addText(text => text
-                .setPlaceholder("https://api.openai.com/v1")
-                .setValue(baseUrl || "")
-                .onChange(value => {
-                    baseUrl = value.trim();
-                    provider.baseUrl = baseUrl;
-                })
-            );
-
-        const otherProvidersWithSecrets = Object.entries(this.plugin.settings.providers)
-            .filter(([id, p]) => id !== (providerId || "") && p.apiKey && p.apiKey.startsWith("secret:"))
-            .map(([id, p]) => ({ id, name: p.name || id, secretRef: p.apiKey }));
-
-        apiKeySetting = new Setting(content)
+        const apiKeySetting = new Setting(contentEl)
             .setName("API Key")
             .setDesc("请输入 API Key");
 
         let apiKeyComp: any;
+        apiKeySetting.addText(text => {
+            apiKeyComp = text;
+            text.inputEl.type = "password";
+            text.setPlaceholder(useKeychain ? "将在保存时存储到 Keychain" : "请输入 API Key")
+                .onChange(v => apiKey = v.trim());
+        });
+        this.updateApiKeyDesc(apiKeySetting, type);
+
+        let baseUrlComp: any;
+        new Setting(contentEl)
+            .setName("Base URL")
+            .setDesc("可选：设置自定义 Base URL")
+            .addText(text => {
+                baseUrlComp = text;
+                text.setPlaceholder("https://api.example.com/v1")
+                    .setValue(PROVIDER_TYPES.find((p: any) => p.id === type)?.defaultBaseUrl || "")
+                    .onChange(v => baseUrl = v.trim());
+                baseUrl = PROVIDER_TYPES.find((p: any) => p.id === type)?.defaultBaseUrl || "";
+            });
+
+        const btns = contentEl.createEl("div", { attr: { style: "display:flex;justify-content:flex-end;gap:10px;margin-top:15px;" } });
+        const cancelBtn = btns.createEl("button", { text: "取消" });
+        cancelBtn.onclick = () => modal.close();
+
+        const saveBtn = btns.createEl("button", { text: "保存", cls: "mod-cta" });
+        saveBtn.onclick = async () => {
+            if (!id) {
+                new Notice("ID 不能为空");
+                return;
+            }
+            if (this.plugin.settings.providers[id]) {
+                new Notice("该 ID 已存在");
+                return;
+            }
+
+            this.plugin.settings.providers[id] = {
+                name: id,
+                type: type as any,
+                apiKey: "",
+                baseUrl: baseUrl,
+                enabled: true
+            };
+
+            if (apiKey) {
+                if (useKeychain && hasSecretStorage) {
+                    const secretId = `hand-markdown-ai-api-key-${id}`;
+                    try {
+                        if (typeof secretStorage.save === "function") {
+                            await secretStorage.save(secretId, apiKey);
+                        } else {
+                            await secretStorage.setSecret(secretId, apiKey);
+                        }
+                        this.plugin.settings.providers[id].apiKey = `secret:${secretId}`;
+                    } catch (e) {
+                        console.error("Keychain save failed", e);
+                        new Notice("Keychain 保存失败，已使用普通存储");
+                        this.plugin.settings.providers[id].apiKey = apiKey;
+                    }
+                } else {
+                    this.plugin.settings.providers[id].apiKey = apiKey;
+                }
+            }
+
+            await this.plugin.saveSettings();
+            this.display();
+            modal.close();
+        };
+
+        modal.open();
+    }
+
+    private showEditProviderModal(providerId: string): void {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText(`编辑供应商: ${providerId}`);
+        const { contentEl } = modal;
+        const provider = this.plugin.settings.providers[providerId];
+
+        let type = provider.type || "openai";
+        let apiKey = provider.apiKey || "";
+        let baseUrl = provider.baseUrl || "";
+
+        let useKeychain = this.plugin.settings.useKeychain ?? true;
+        const secretStorage = (this.app as any).secretStorage || (this.app as any).keychain || (window as any).secretStorage || (this.app as any).vault?.secretStorage;
+        const hasSecretStorage = secretStorage && (typeof secretStorage.save === "function" || typeof secretStorage.setSecret === "function");
+
+        if (apiKey.startsWith("secret:")) {
+            useKeychain = true;
+        } else if (!apiKey && (this.plugin.settings.useKeychain ?? true) && hasSecretStorage) {
+            useKeychain = true;
+        }
+
+        const otherProvidersWithSecrets = Object.entries(this.plugin.settings.providers)
+            .filter(([id, p]: [string, any]) => id !== providerId && p.apiKey && p.apiKey.startsWith("secret:"))
+            .map(([id, p]: [string, any]) => ({ id, name: p.name || id, secretRef: p.apiKey }));
+
+        const apiKeySetting = new Setting(contentEl)
+            .setName("API Key")
+            .setDesc("请输入 API Key");
+
+        new Setting(contentEl)
+            .setName("类型 (Type)")
+            .setDesc("API 协议类型")
+            .addDropdown(dropdown => {
+                PROVIDER_TYPES.forEach((t: any) =>
+                    dropdown.addOption(t.id, t.name)
+                );
+                dropdown.setValue(type)
+                    .onChange(v => {
+                        type = v;
+                        this.updateApiKeyDesc(apiKeySetting, type);
+                    });
+            });
+
+        let apiKeyComp: any;
         if (otherProvidersWithSecrets.length > 0) {
-            new Setting(content)
+            new Setting(contentEl)
                 .setName("复用已有 Key")
                 .setDesc("选择复用其他供应商已配置的 Keychain 密钥")
                 .addDropdown(dropdown => {
@@ -462,7 +499,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
                         if (value) {
                             apiKey = value;
                             useKeychain = true;
-                            provider.apiKey = value;
                             if (apiKeyComp) {
                                 apiKeyComp.setValue("");
                                 apiKeyComp.setPlaceholder(`已复用 ${otherProvidersWithSecrets.find(p => p.secretRef === value)?.name} 的 Key`);
@@ -470,7 +506,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
                             }
                         } else {
                             apiKey = "";
-                            provider.apiKey = "";
                             if (apiKeyComp) {
                                 apiKeyComp.setDisabled(false);
                                 apiKeyComp.setPlaceholder(useKeychain ? "将在保存时存储到 Keychain" : "请输入 API Key");
@@ -495,68 +530,53 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 text.setValue(apiKey);
             }
 
-            text.onChange(value => {
-                apiKey = value.trim();
+            text.onChange(v => {
+                apiKey = v.trim();
             });
         });
-        this.updateApiKeyDesc(apiKeySetting, idValue || providerId || "", type);
+        this.updateApiKeyDesc(apiKeySetting, type);
 
-        new Setting(content)
-            .setName("启用")
-            .addToggle(toggle => toggle
-                .setValue(enabled)
-                .onChange(value => {
-                    enabled = value;
-                    provider.enabled = value;
-                })
-            );
+        new Setting(contentEl)
+            .setName("Base URL")
+            .setDesc("可选：设置自定义 Base URL")
+            .addText(text => text
+                .setPlaceholder("https://api.example.com/v1")
+                .setValue(baseUrl)
+                .onChange(v => baseUrl = v.trim()));
 
-        const footer = modal.contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;" } });
-        const cancelBtn = footer.createEl("button", { text: "取消" });
-        cancelBtn.onclick = () => modal.close();
-        const saveBtn = footer.createEl("button", { text: "保存" });
+        const btns = contentEl.createEl("div", { attr: { style: "display:flex;justify-content:flex-end;gap:10px;margin-top:15px;" } });
+        btns.createEl("button", { text: "取消" }).onclick = () => modal.close();
+
+        const saveBtn = btns.createEl("button", { text: "保存", cls: "mod-cta" });
         saveBtn.onclick = async () => {
-            if (!idValue) {
-                new Notice("ID 不能为空");
-                return;
-            }
-            if (mode === "add" && this.plugin.settings.providers[idValue]) {
-                new Notice("ID 已存在");
-                return;
-            }
-
-            const targetProviderId = mode === "add" ? idValue : (providerId || idValue);
-            if (!this.plugin.settings.providers[targetProviderId]) {
-                this.plugin.settings.providers[targetProviderId] = { apiKey: "", baseUrl: "", enabled: true } as any;
-            }
-
-            this.plugin.settings.providers[targetProviderId].name = provider.name || targetProviderId;
-            this.plugin.settings.providers[targetProviderId].type = type as any;
-            this.plugin.settings.providers[targetProviderId].baseUrl = baseUrl;
-            this.plugin.settings.providers[targetProviderId].enabled = enabled;
+            this.plugin.settings.providers[providerId].name = providerId;
+            this.plugin.settings.providers[providerId].type = type as any;
+            this.plugin.settings.providers[providerId].baseUrl = baseUrl;
 
             const isReusing = apiKey.startsWith("secret:") && otherProvidersWithSecrets.some(p => p.secretRef === apiKey);
             if (isReusing) {
-                this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
-            } else if (apiKey && !apiKey.startsWith("secret:")) {
+                this.plugin.settings.providers[providerId].apiKey = apiKey;
+            }
+            else if (apiKey && !apiKey.startsWith("secret:")) {
                 if (useKeychain && hasSecretStorage) {
-                    const secretId = `hand-markdown-ai-api-key-${targetProviderId}`;
+                    const secretId = `hand-markdown-ai-api-key-${providerId}`;
                     try {
                         if (typeof secretStorage.save === "function") {
                             await secretStorage.save(secretId, apiKey);
                         } else {
                             await secretStorage.setSecret(secretId, apiKey);
                         }
-                        this.plugin.settings.providers[targetProviderId].apiKey = `secret:${secretId}`;
+                        this.plugin.settings.providers[providerId].apiKey = `secret:${secretId}`;
                     } catch (e) {
                         new Notice("Keychain 保存失败，已使用普通存储");
-                        this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
+                        this.plugin.settings.providers[providerId].apiKey = apiKey;
                     }
                 } else {
-                    this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
+                    this.plugin.settings.providers[providerId].apiKey = apiKey;
                 }
-            } else if (apiKey === "") {
-                this.plugin.settings.providers[targetProviderId].apiKey = "";
+            }
+            else if (apiKey === "") {
+                this.plugin.settings.providers[providerId].apiKey = "";
             }
 
             await this.plugin.saveSettings();
@@ -565,15 +585,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
         };
 
         modal.open();
-    }
-
-    private showAddProviderModal(): void {
-        // 使用与 Markdown-Next-AI 相同的添加供应商流程
-        this.showProviderModal("add");
-    }
-
-    private showEditProviderModal(providerId: string): void {
-        this.showProviderModal("edit", providerId);
     }
 
     private async fetchModels(providerId: string): Promise<{ id: string; name: string }[] | null> {
@@ -735,7 +746,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 }));
 
         const advancedDetails = contentEl.createEl("details");
-        advancedDetails.createEl("summary", { text: "高级设置 (Advanced: Internal ID / Category)", attr: { style: "color: var(--text-muted); cursor: pointer; margin-bottom: 10px;" } });
+        advancedDetails.createEl("summary", { text: "高级设置 (Advanced: Internal ID)", attr: { style: "color: var(--text-muted); cursor: pointer; margin-bottom: 10px;" } });
 
         new Setting(advancedDetails)
             .setName("插件内部 ID")
@@ -743,16 +754,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
             .addText(text => {
                 internalIdInput = text;
                 text.onChange(v => internalId = v.trim());
-            });
-
-        let chosenCategory: ModelCategory = category;
-        new Setting(advancedDetails)
-            .setName("类别")
-            .setDesc("转换图片/PDF 建议选择 multimodal 或 vision")
-            .addDropdown(drop => {
-                Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
-                drop.setValue(String(chosenCategory));
-                drop.onChange(v => chosenCategory = v as any);
             });
 
         const btns = contentEl.createEl("div", { attr: { style: "display:flex;gap:10px;margin-top:20px;justify-content:flex-end;" } });
@@ -773,7 +774,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 provider: providerId,
                 model: apiModelId,
                 enabled: true,
-                category: chosenCategory
+                category
             } as any;
             this.ensureCurrentModelValid();
             await this.plugin.saveSettings();
@@ -793,7 +794,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
 
         let providerId = m.provider;
         let apiModelId = m.model || "";
-        let category: ModelCategory = (m.category as any) || MODEL_CATEGORIES.TEXT;
 
         let apiModelIdInput: any;
         let suggest: ModelInputSuggest;
@@ -803,8 +803,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
             .setDesc("更改该模型所属的服务商")
             .addDropdown(dropdown => {
                 Object.keys(this.plugin.settings.providers).forEach(pId => {
-                    const p = this.plugin.settings.providers[pId];
-                    dropdown.addOption(pId, `${p.name || pId} (${p.type || "openai"})`);
+                    dropdown.addOption(pId, pId);
                 });
                 dropdown.setValue(providerId);
                 dropdown.onChange(v => {
@@ -841,15 +840,6 @@ export class SimpleSettingsTab extends PluginSettingTab {
                     }
                 }));
 
-        new Setting(contentEl)
-            .setName("类别")
-            .setDesc("转换图片/PDF 建议选择 multimodal 或 vision")
-            .addDropdown(drop => {
-                Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
-                drop.setValue(String(category));
-                drop.onChange(v => category = v as any);
-            });
-
         const btns = contentEl.createEl("div", { attr: { style: "display:flex;gap:10px;margin-top:20px;justify-content:flex-end;" } });
         btns.createEl("button", { text: "取消" }).onclick = () => modal.close();
         const save = btns.createEl("button", { text: "保存更改", cls: "mod-cta" });
@@ -862,8 +852,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
                 ...m,
                 provider: providerId,
                 model: apiModelId,
-                name: apiModelId,
-                category
+                name: apiModelId
             } as any;
             this.ensureCurrentModelValid();
             await this.plugin.saveSettings();

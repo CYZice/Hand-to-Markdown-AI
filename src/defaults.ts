@@ -8,29 +8,15 @@ export const DEFAULT_SETTINGS: PluginSettings = {
             apiKey: "",
             baseUrl: "https://api.openai.com/v1",
             enabled: true,
-            name: "OpenAI",
+            name: "openai",
             type: "openai"
         },
-        anthropic: {
+        deepseek: {
             apiKey: "",
-            baseUrl: "https://api.anthropic.com/v1",
-            enabled: false,
-            name: "Anthropic",
-            type: "anthropic"
-        },
-        gemini: {
-            apiKey: "",
-            baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-            enabled: false,
-            name: "Google Gemini",
-            type: "gemini"
-        },
-        ollama: {
-            apiKey: "",
-            baseUrl: "http://localhost:11434/v1",
-            enabled: false,
-            name: "Ollama",
-            type: "ollama"
+            baseUrl: "https://api.deepseek.com/v1",
+            enabled: true,
+            name: "deepseek",
+            type: "deepseek"
         }
     },
 
@@ -89,6 +75,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         openai: "https://platform.openai.com/api-keys",
         anthropic: "https://console.anthropic.com/",
         gemini: "https://aistudio.google.com/app/apikey",
+        deepseek: "https://platform.deepseek.com/api_keys",
         ollama: "https://ollama.com/"
     }
 };
