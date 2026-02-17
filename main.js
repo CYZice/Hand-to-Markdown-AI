@@ -37,7 +37,7 @@ var init_constants = __esm({
     };
     SYSTEM_PROMPTS = {
       continue: "\u4F60\u662F\u4E00\u4E2A\u4E13\u4E1A\u7684\u5199\u4F5C\u52A9\u624B\u3002\u8BF7\u6839\u636E\u7528\u6237\u63D0\u4F9B\u7684\u4E0A\u4E0B\u6587\uFF0C\u4ECE\u5149\u6807\u4F4D\u7F6E\u5F00\u59CB\u7EED\u5199\u540E\u7EED\u5185\u5BB9\u3002\u91CD\u8981\uFF1A\u53EA\u751F\u6210\u65B0\u7684\u5185\u5BB9\uFF0C\u4E0D\u8981\u91CD\u590D\u6216\u91CD\u5199\u5DF2\u6709\u7684\u5185\u5BB9\u3002",
-      convert: "\u4F60\u662F\u4E00\u4E2A\u4E13\u4E1A\u7684\u6587\u6863\u8F6C\u6362\u52A9\u624B\u3002\u8BF7\u5C06\u56FE\u7247\u4E2D\u7684\u624B\u5199\u7B14\u8BB0\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316\u7684Markdown\u683C\u5F0F\u3002\u6CE8\u610F\u6807\u9898\u3001\u5217\u8868\u548C\u5176\u4ED6\u683C\u5F0F\u3002\u4F7F\u7528$$\u8BED\u6CD5\u8868\u793A\u6570\u5B66\u516C\u5F0F\u3002\u4E0D\u8981\u9057\u6F0F\u539F\u59CB\u6587\u672C\u4E2D\u7684\u4EFB\u4F55\u5185\u5BB9\u3002\u8F93\u51FA\u5E94\u9002\u5408\u5728Obsidian\u4E2D\u4F7F\u7528\u3002\u53EA\u8FD4\u56DEmarkdown\u5185\u5BB9\uFF0C\u4E0D\u8981\u5305\u542B\u5176\u4ED6\u6587\u672C\u6216\u89E3\u91CA\u3002"
+      convert: "\u4F60\u662F\u4E00\u4E2A\u9762\u5411 Obsidian \u7684 OCR \u4E0E\u6587\u6863\u8F6C\u6362\u52A9\u624B\u3002\u5C06\u56FE\u7247\u5185\u5BB9\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316 Markdown\uFF1A\u4FDD\u6301\u539F\u6587\u8BED\u8A00\uFF0C\u4E0D\u8981\u7FFB\u8BD1\uFF1B\u4FDD\u7559\u6807\u9898\u5C42\u7EA7/\u5217\u8868/\u8868\u683C/\u4EE3\u7801\u5757\uFF1B\u516C\u5F0F\u7528 $...$ \u4E0E $$...$$\uFF1B\u770B\u4E0D\u6E05\u7684\u5185\u5BB9\u7528[\u65E0\u6CD5\u8FA8\u8BA4]/[\u4E0D\u786E\u5B9A]\u6807\u6CE8\uFF0C\u4E0D\u8981\u731C\u6D4B\uFF1B\u53EA\u8F93\u51FA Markdown \u6B63\u6587\uFF0C\u4E0D\u8981\u8F93\u51FA\u89E3\u91CA\u3002"
     };
   }
 });
@@ -139,7 +139,19 @@ var init_defaults = __esm({
         ollama: "https://ollama.com/"
       }
     };
-    DEFAULT_CONVERSION_PROMPT = `Take the handwritten notes from this image and convert them into a clean, well-structured Markdown file. Pay attention to headings, lists, and any other formatting. Resemble the hierarchy. Use latex for mathematical equations. For latex use the $$ syntax instead of \`\`\`latex. Do not skip anything from the original text. The output should be suitable for use in Obsidian. Just give me the markdown, do not include other text in the response apart from the markdown file. No explanation on how the changes were made is needed`;
+    DEFAULT_CONVERSION_PROMPT = `\u4F60\u662F\u4E00\u4E2A\u9762\u5411 Obsidian \u7684 OCR \u4E0E\u7B14\u8BB0\u7ED3\u6784\u5316\u52A9\u624B\u3002
+
+\u4EFB\u52A1\uFF1A\u628A\u8F93\u5165\u56FE\u7247\u4E2D\u7684\u5185\u5BB9\u8F6C\u6362\u6210\u5E72\u51C0\u3001\u7ED3\u6784\u5316\u7684 Markdown\u3002
+
+\u89C4\u5219\uFF1A
+- \u4FDD\u6301\u539F\u6587\u8BED\u8A00\uFF0C\u4E0D\u8981\u7FFB\u8BD1\u3002
+- \u5C3D\u91CF\u4FDD\u7559\u539F\u6709\u7ED3\u6784\uFF1A\u6807\u9898\u5C42\u7EA7\u3001\u6BB5\u843D\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u4EE3\u7801\u5757\u3001\u5F15\u7528\u3001\u5F3A\u8C03\u7B49\u3002
+- \u6570\u5B66\u516C\u5F0F\uFF1A\u884C\u5185\u7528 $...$\uFF0C\u72EC\u7ACB\u516C\u5F0F\u7528 $$...$$\u3002
+- \u4E0D\u8981\u81C6\u6D4B\u6216\u8865\u5168\u770B\u4E0D\u6E05\u7684\u5185\u5BB9\uFF1A\u9047\u5230\u65E0\u6CD5\u8FA8\u8BA4\u7684\u5B57/\u8BCD/\u884C\uFF0C\u7528 [\u65E0\u6CD5\u8FA8\u8BA4] \u6216 [\u4E0D\u786E\u5B9A] \u6807\u6CE8\uFF0C\u5E76\u4FDD\u7559\u5468\u56F4\u53EF\u8BFB\u5185\u5BB9\u3002
+- \u56FE\u8868/\u6D41\u7A0B\u56FE/\u793A\u610F\u56FE\uFF1A\u4F18\u5148\u8F6C\u5199\u53EF\u8BFB\u7684\u6807\u7B7E\u4E0E\u6587\u5B57\uFF1B\u53EA\u6709\u5728\u4FE1\u606F\u660E\u786E\u65F6\u624D\u505A\u89E3\u91CA\u3002\u5982\u679C\u4FE1\u606F\u4E0D\u8DB3\uFF0C\u6DFB\u52A0\u4E00\u4E2A\u5C0F\u8282\u8BF4\u660E\u201C\u56FE\u793A\u4FE1\u606F\u4E0D\u8DB3\u201D\uFF0C\u5E76\u5217\u51FA\u4F60\u80FD\u786E\u5B9A\u7684\u8981\u70B9\uFF08\u4E0D\u8981\u7F16\u9020\uFF09\u3002
+- \u5982\u679C\u4E00\u6B21\u8F93\u5165\u5305\u542B\u591A\u5F20\u56FE\u7247\uFF08\u4F8B\u5982 PDF \u8FDE\u7EED\u9875\uFF09\uFF0C\u6309\u8F93\u5165\u987A\u5E8F\u8F93\u51FA\uFF0C\u5E76\u7528\u4E8C\u7EA7\u6807\u9898\u5206\u9694\u6BCF\u4E00\u9875\uFF1A## Page 1 / ## Page 2 ...\uFF08\u5982\u679C\u7528\u6237\u63D0\u4F9B\u4E86\u9875\u7801\u5219\u4F7F\u7528\u5BF9\u5E94\u9875\u7801\uFF09\u3002
+
+\u53EA\u8F93\u51FA Markdown \u6B63\u6587\uFF0C\u4E0D\u8981\u8F93\u51FA\u4EFB\u4F55\u989D\u5916\u8BF4\u660E\u3002`;
     SUPPORTED_FILE_TYPES = {
       // 图片格式
       ".png": "image/png",
@@ -544,11 +556,11 @@ var batch_progress_modal_exports = {};
 __export(batch_progress_modal_exports, {
   BatchProgressModal: () => BatchProgressModal
 });
-var import_obsidian8, BatchProgressModal;
+var import_obsidian9, BatchProgressModal;
 var init_batch_progress_modal = __esm({
   "src/ui/batch-progress-modal.ts"() {
-    import_obsidian8 = require("obsidian");
-    BatchProgressModal = class extends import_obsidian8.Modal {
+    import_obsidian9 = require("obsidian");
+    BatchProgressModal = class extends import_obsidian9.Modal {
       barEl;
       textEl;
       statusEl;
@@ -594,7 +606,7 @@ __export(main_exports, {
   default: () => HandMarkdownAIPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 
 // src/conversion-modal.ts
 var import_obsidian6 = require("obsidian");
@@ -1145,8 +1157,27 @@ ${context.contextContent}
       const messages = [
         { role: "system", content: conversionPrompt }
       ];
+      const pageFromName = (() => {
+        if (fileData?.name) {
+          const m = fileData.name.match(/page\s*(\d+)/i);
+          if (m?.[1])
+            return Number(m[1]);
+        }
+        if (fileData?.path) {
+          const m = fileData.path.match(/#page(\d+)/i);
+          if (m?.[1])
+            return Number(m[1]);
+        }
+        return null;
+      })();
+      const fileHint = fileData?.name ? `\u6587\u4EF6\uFF1A${fileData.name}` : "";
+      const pageHint = pageFromName ? `\u9875\u7801\uFF1A${pageFromName}` : "";
+      const hintLine = [fileHint, pageHint].filter(Boolean).join("\uFF0C");
       const content = [
-        { type: "text", text: "\u8BF7\u5C06\u56FE\u7247\u4E2D\u7684\u624B\u5199\u7B14\u8BB0\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316\u7684Markdown\u683C\u5F0F\u3002" }
+        {
+          type: "text",
+          text: hintLine ? `\u8BF7\u5C06\u4E0B\u56FE\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316 Markdown\u3002${hintLine}` : "\u8BF7\u5C06\u4E0B\u56FE\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316 Markdown\u3002"
+        }
       ];
       content.push({
         type: "image_url",
@@ -1237,7 +1268,7 @@ ${context.contextContent}
   /**
    * 批量转换多张图片（单次请求发送多张 image_url）
    */
-  async convertImageBatch(files, prompt2) {
+  async convertImageBatch(files, prompt2, pageNumbers) {
     const startTime = Date.now();
     try {
       const config = await this.getCurrentModelConfig();
@@ -1260,8 +1291,18 @@ ${context.contextContent}
       const messages = [
         { role: "system", content: conversionPrompt }
       ];
+      const normalizedPages = Array.isArray(pageNumbers) ? pageNumbers.map((n) => Math.floor(n)).filter((n) => n > 0) : [];
+      const hasAlignedPages = normalizedPages.length === files.length && files.length > 0;
+      const fileNames = files.map((f) => f?.name).filter(Boolean).join("\u3001");
+      const pagesHint = hasAlignedPages ? `\u9875\u7801\u987A\u5E8F\uFF1A${normalizedPages.join(", ")}` : "";
+      const nameHint = fileNames ? `\u56FE\u7247\u6587\u4EF6\uFF1A${fileNames}` : "";
+      const hints = [nameHint, pagesHint].filter(Boolean).join("\n");
       const content = [
-        { type: "text", text: "\u8BF7\u5C06\u4EE5\u4E0B\u56FE\u7247\uFF08\u53EF\u80FD\u662F\u8FDE\u7EED\u9875\uFF09\u4E2D\u7684\u624B\u5199\u7B14\u8BB0\u5408\u5E76\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316\u7684Markdown\u3002" }
+        {
+          type: "text",
+          text: "\u8BF7\u5C06\u4EE5\u4E0B\u56FE\u7247\u8F6C\u6362\u4E3A\u7ED3\u6784\u5316 Markdown\u3002\n" + (hints ? `${hints}
+` : "") + (hasAlignedPages ? "\u8981\u6C42\uFF1A\u6309\u8F93\u5165\u987A\u5E8F\u8F93\u51FA\uFF0C\u6BCF\u9875\u7528\u4E8C\u7EA7\u6807\u9898\u5206\u9694\uFF1A## Page {\u9875\u7801}\u3002" : "\u8981\u6C42\uFF1A\u6309\u8F93\u5165\u987A\u5E8F\u8F93\u51FA\uFF0C\u5982\u6709\u591A\u9875\u5185\u5BB9\u8BF7\u7528\u4E8C\u7EA7\u6807\u9898\u5206\u9694\uFF1A## Page 1 / ## Page 2 ...")
+        }
       ];
       files.forEach((file) => {
         content.push({
@@ -1692,8 +1733,11 @@ var PDFProcessor = class {
       const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
       const pdf = await loadingTask.promise;
       const totalPages = pdf.numPages;
-      new import_obsidian4.Notice(`\u5F00\u59CB\u5904\u7406 PDF\uFF0C\u5171 ${totalPages} \u9875`, 2e3);
-      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      const normalizedPages = options.pageNumbers && options.pageNumbers.length > 0 ? Array.from(new Set(options.pageNumbers.map((n) => Math.floor(n)).filter((n) => n > 0 && n <= totalPages))).sort((a, b) => a - b) : [];
+      const pagesToRender = normalizedPages.length > 0 ? normalizedPages : Array.from({ length: totalPages }, (_, i) => i + 1);
+      new import_obsidian4.Notice(`\u5F00\u59CB\u5904\u7406 PDF\uFF0C\u5171 ${pagesToRender.length} \u9875`, 2e3);
+      for (let i = 0; i < pagesToRender.length; i++) {
+        const pageNum = pagesToRender[i];
         if (onCancel?.()) {
           new import_obsidian4.Notice("\u8F6C\u6362\u5DF2\u53D6\u6D88", 2e3);
           break;
@@ -1715,7 +1759,9 @@ var PDFProcessor = class {
           const base64 = await Promise.race([pagePromise, timeoutPromise]);
           await onPageConverted(base64, pageNum);
           if (onProgress) {
-            onProgress(pageNum, totalPages, `\u5DF2\u5904\u7406\u7B2C ${pageNum}/${totalPages} \u9875`);
+            const done = i + 1;
+            const total = pagesToRender.length;
+            onProgress(done, total, `\u5DF2\u5904\u7406\u7B2C ${done}/${total} \u9875`);
           }
         } catch (pageError) {
           const errMsg = pageError instanceof Error ? pageError.message : String(pageError);
@@ -1723,7 +1769,7 @@ var PDFProcessor = class {
           new import_obsidian4.Notice(`\u26A0\uFE0F \u7B2C ${pageNum} \u9875\u5904\u7406\u5931\u8D25\uFF0C\u8DF3\u8FC7\u8BE5\u9875`, 3e3);
         }
       }
-      return totalPages;
+      return pagesToRender.length;
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       console.error("PDF \u52A0\u8F7D\u5931\u8D25:", errMsg);
@@ -1827,13 +1873,13 @@ var ConversionService = class {
   getConversionPrompt() {
     return this.settings.conversionPrompt || DEFAULT_CONVERSION_PROMPT;
   }
-  async convertFile(filePath) {
+  async convertFile(filePath, options) {
     const startTime = Date.now();
     let progressModal = null;
     try {
       const mimeType = FileProcessor.getFileMimeType(filePath);
       if (mimeType === "application/pdf") {
-        return await this.convertPdfStream(filePath, startTime);
+        return await this.convertPdfStream(filePath, startTime, options?.pdfPages);
       } else {
         return await this.convertSingleImage(filePath, startTime);
       }
@@ -1891,7 +1937,7 @@ var ConversionService = class {
    * PDF 流式处理（新增）
    * 逐页转换，实时写入文件
    */
-  async convertPdfStream(filePath, startTime) {
+  async convertPdfStream(filePath, startTime, pdfPages) {
     let totalPages = 0;
     let successPages = 0;
     let failedPages = [];
@@ -1909,8 +1955,15 @@ var ConversionService = class {
       const arrayBuffer = await this.app.vault.readBinary(file);
       const bufferForInfo = arrayBuffer.slice(0);
       const pdfInfo = await PDFProcessor.getPdfInfo(bufferForInfo);
-      totalPages = pdfInfo.numPages;
-      new import_obsidian5.Notice(`\u5F00\u59CB\u5904\u7406 PDF\uFF0C\u5171 ${totalPages} \u9875`, 3e3);
+      const pdfTotalPages = pdfInfo.numPages;
+      const normalizedPages = pdfPages && pdfPages.length > 0 ? Array.from(new Set(pdfPages.map((n) => Math.floor(n)).filter((n) => n > 0 && n <= pdfTotalPages))).sort((a, b) => a - b) : [];
+      if (pdfPages && pdfPages.length > 0 && normalizedPages.length === 0) {
+        throw new Error("\u9875\u7801\u8303\u56F4\u65E0\u6548");
+      }
+      const pagesToProcess = normalizedPages.length > 0 ? normalizedPages : Array.from({ length: pdfTotalPages }, (_, i) => i + 1);
+      totalPages = pagesToProcess.length;
+      const noticeText = totalPages !== pdfTotalPages ? `\u5F00\u59CB\u5904\u7406 PDF\uFF0C\u5171 ${totalPages} \u9875\uFF08\u4ECE ${pdfTotalPages} \u9875\u4E2D\u9009\u62E9\uFF09` : `\u5F00\u59CB\u5904\u7406 PDF\uFF0C\u5171 ${totalPages} \u9875`;
+      new import_obsidian5.Notice(noticeText, 3e3);
       const batchSize = this.settings.advancedSettings?.imagesPerRequest || 1;
       const expectedTotalJobs = Math.max(1, Math.ceil(totalPages / batchSize));
       progressModal = new ProgressModal(this.app);
@@ -1937,6 +1990,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
       await this.app.workspace.openLinkText(outputFile.path, "", true);
       const prompt2 = this.getConversionPrompt();
       let batchImages = [];
+      let batchPages = [];
       let jobCounter = 0;
       let totalJobs = 0;
       const jobQueue = [];
@@ -1944,13 +1998,14 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
       const jobResults = /* @__PURE__ */ new Map();
       let nextWriteId = 1;
       let writing = false;
+      let renderedCount = 0;
       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const retryConvertImageBatch = async (files, prompt3) => {
+      const retryConvertImageBatch = async (files, prompt3, pageNumbers) => {
         let attempt = 0;
         let lastErr = null;
         while (attempt <= RETRY_ATTEMPTS) {
           try {
-            const res = await this.aiService.convertImageBatch(files, prompt3);
+            const res = await this.aiService.convertImageBatch(files, prompt3, pageNumbers);
             return res;
           } catch (err) {
             lastErr = err;
@@ -1994,11 +2049,10 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
             if (result.success !== false) {
               successPages += job.images.length;
             } else {
-              const failed = Array.from({ length: job.endPage - job.startPage + 1 }, (_, i) => job.startPage + i);
-              failedPages.push(...failed);
+              failedPages.push(...job.pages);
             }
             progressModal.updateAIProgress(nextWriteId);
-            const processedPages = job.endPage;
+            const processedPages = Math.min(totalPages, successPages + failedPages.length);
             progressModal.setStatus(`\u5DF2\u5B8C\u6210\u6279\u6B21 ${nextWriteId}/${expectedTotalJobs}\uFF0C\u5DF2\u5904\u7406 ${processedPages}/${totalPages} \u9875\uFF08\u6210\u529F ${successPages} \u9875\uFF09`);
             const finalNewContent = currentContent + appendContent;
             await this.app.vault.modify(outputFile, finalNewContent);
@@ -2014,7 +2068,7 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
           activeJobs++;
           (async () => {
             try {
-              const res = await retryConvertImageBatch(job.images, prompt2);
+              const res = await retryConvertImageBatch(job.images, prompt2, job.pages);
               jobResults.set(job.id, { result: res, job });
               await tryFlushWrites();
             } catch (e) {
@@ -2041,6 +2095,8 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
       await PDFProcessor.streamConvertPdfToImages(
         arrayBuffer,
         async (base64, pageNum) => {
+          let errMsg = null;
+          let submittedBatch = false;
           try {
             const pageFileData = {
               path: `${filePath}#page${pageNum}`,
@@ -2051,25 +2107,25 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
               isPdf: true
             };
             batchImages.push(pageFileData);
-            progressModal.updateRenderProgress(pageNum);
-            progressModal.setStatus(`\u5DF2\u6E32\u67D3\u7B2C ${pageNum}/${totalPages} \u9875\uFF0C\u7B49\u5F85\u63D0\u4EA4AI...`);
-            if (batchImages.length >= batchSize || pageNum === totalPages) {
+            batchPages.push(pageNum);
+            if (batchImages.length >= batchSize || renderedCount + 1 === totalPages) {
               jobCounter++;
               const job = {
                 id: jobCounter,
                 images: batchImages.slice(),
-                startPage: pageNum - batchImages.length + 1,
-                endPage: pageNum
+                pages: batchPages.slice()
               };
               jobQueue.push(job);
               totalJobs++;
-              progressModal.setStatus(`\u5DF2\u63D0\u4EA4\u6279\u6B21 ${totalJobs}/${expectedTotalJobs}\uFF08\u7B2C ${job.startPage}-${job.endPage} \u9875\uFF09\uFF0C\u6B63\u5728\u5E76\u53D1\u5904\u7406...`);
+              progressModal.setStatus(`\u5DF2\u63D0\u4EA4\u6279\u6B21 ${totalJobs}/${expectedTotalJobs}\uFF08${job.images.length} \u9875\uFF09\uFF0C\u6B63\u5728\u5E76\u53D1\u5904\u7406...`);
               batchImages = [];
+              batchPages = [];
               runNextJob();
+              submittedBatch = true;
             }
           } catch (pageError) {
             failedPages.push(pageNum);
-            const errMsg = pageError instanceof Error ? pageError.message : String(pageError);
+            errMsg = pageError instanceof Error ? pageError.message : String(pageError);
             console.error(`\u7B2C ${pageNum} \u9875\u8F6C\u6362\u5931\u8D25:`, errMsg);
             const currentContent = await this.app.vault.read(outputFile);
             const errorBlock = pageNum === 1 ? `> [!ERROR] \u7B2C ${pageNum} \u9875\u6E32\u67D3\u5931\u8D25: ${errMsg}` : `
@@ -2079,8 +2135,14 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
 > [!ERROR] \u7B2C ${pageNum} \u9875\u6E32\u67D3\u5931\u8D25: ${errMsg}`;
             const finalNewContent = currentContent + errorBlock;
             await this.app.vault.modify(outputFile, finalNewContent);
-            progressModal.updateRenderProgress(pageNum);
-            progressModal.setStatus(`\u7B2C ${pageNum} \u9875\u6E32\u67D3\u5931\u8D25\uFF1A${errMsg}`);
+          } finally {
+            renderedCount++;
+            progressModal.updateRenderProgress(renderedCount);
+            if (errMsg) {
+              progressModal.setStatus(`\u7B2C ${pageNum} \u9875\u6E32\u67D3\u5931\u8D25\uFF1A${errMsg}`);
+            } else if (!submittedBatch) {
+              progressModal.setStatus(`\u5DF2\u6E32\u67D3\u7B2C ${renderedCount}/${totalPages} \u9875\uFF0C\u7B49\u5F85\u63D0\u4EA4AI...`);
+            }
           }
         },
         (current, total, message2) => {
@@ -2091,7 +2153,8 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
           quality: this.settings.advancedSettings?.pdfQuality || 0.8,
           format: "jpeg",
           timeoutPerPage: this.settings.advancedSettings?.timeout || 3e4,
-          onCancel: () => progressModal?.isCancelled() === true
+          onCancel: () => progressModal?.isCancelled() === true,
+          pageNumbers: pagesToProcess
         }
       );
       while (activeJobs > 0 || jobQueue.length > 0 || jobResults.has(nextWriteId)) {
@@ -2247,7 +2310,7 @@ ${result.markdown}` : nextWriteId === 1 ? `> [!ERROR] \u8F6C\u6362\u5931\u8D25: 
           size: base64.length,
           isPdf: true
         };
-        const res = await this.aiService.convertImageBatch([pageFileData], prompt2);
+        const res = await this.aiService.convertImageBatch([pageFileData], prompt2, [pageNum]);
         const of = this.app.vault.getAbstractFileByPath(outputPath);
         const current = await this.app.vault.read(of);
         const cleaned = current.replace(new RegExp(`
@@ -2306,7 +2369,7 @@ ${res.markdown}`;
         size: base64.length,
         isPdf: true
       };
-      const res = await this.aiService.convertImageBatch([pageFileData], prompt2);
+      const res = await this.aiService.convertImageBatch([pageFileData], prompt2, [pageNum]);
       const of = this.app.vault.getAbstractFileByPath(outputPath);
       const current = await this.app.vault.read(of);
       const cleaned = current.replace(new RegExp(`
@@ -2346,7 +2409,7 @@ ${res.markdown}`;
     }
     return void 0;
   }
-  async convertFiles(filePaths, onProgress) {
+  async convertFiles(filePaths, onProgress, options) {
     const results = [];
     const total = filePaths.length;
     for (let i = 0; i < total; i++) {
@@ -2359,7 +2422,8 @@ ${res.markdown}`;
             message: `\u6B63\u5728\u8F6C\u6362: ${FileProcessor.getFileName(filePath)}`
           });
         }
-        const result = await this.convertFile(filePath);
+        const isPdf = FileProcessor.getFileMimeType(filePath) === "application/pdf";
+        const result = await this.convertFile(filePath, isPdf ? { pdfPages: options?.pdfPages } : void 0);
         results.push(result);
       } catch (error) {
         console.error(`\u8F6C\u6362\u6587\u4EF6\u5931\u8D25: ${filePath}`, error);
@@ -2375,6 +2439,83 @@ ${res.markdown}`;
       }
     }
     return results;
+  }
+  async convertFilesMerged(filePaths) {
+    const startTime = Date.now();
+    try {
+      const supportedFiles = filePaths.filter((path) => ConversionService.isFileSupported(path));
+      if (supportedFiles.length === 0) {
+        new import_obsidian5.Notice("\u6CA1\u6709\u652F\u6301\u7684\u6587\u4EF6", 3e3);
+        return {
+          markdown: "",
+          sourcePath: "",
+          outputPath: "",
+          provider: this.settings.currentModel || "unknown",
+          duration: 0,
+          success: false,
+          error: "\u6CA1\u6709\u652F\u6301\u7684\u6587\u4EF6"
+        };
+      }
+      const pdfFiles = supportedFiles.filter((path) => FileProcessor.getFileMimeType(path) === "application/pdf");
+      if (pdfFiles.length > 0) {
+        new import_obsidian5.Notice("\u5408\u5E76\u4EC5\u652F\u6301\u56FE\u7247\u6587\u4EF6\uFF0CPDF\u8BF7\u5355\u72EC\u8F6C\u6362", 4e3);
+        return {
+          markdown: "",
+          sourcePath: pdfFiles[0],
+          outputPath: "",
+          provider: this.settings.currentModel || "unknown",
+          duration: 0,
+          success: false,
+          error: "\u5408\u5E76\u4EC5\u652F\u6301\u56FE\u7247\u6587\u4EF6"
+        };
+      }
+      const fileDataList = await FileProcessor.processFiles(supportedFiles, this.app);
+      if (fileDataList.length === 0) {
+        new import_obsidian5.Notice("\u6CA1\u6709\u53EF\u5904\u7406\u7684\u56FE\u7247\u6587\u4EF6", 3e3);
+        return {
+          markdown: "",
+          sourcePath: "",
+          outputPath: "",
+          provider: this.settings.currentModel || "unknown",
+          duration: 0,
+          success: false,
+          error: "\u6CA1\u6709\u53EF\u5904\u7406\u7684\u56FE\u7247\u6587\u4EF6"
+        };
+      }
+      const prompt2 = this.getConversionPrompt();
+      const conversionResult = await this.aiService.convertImageBatch(fileDataList, prompt2);
+      if (!conversionResult.success) {
+        return {
+          ...conversionResult,
+          outputPath: ""
+        };
+      }
+      const baseName = fileDataList[0].name.replace(/\.[^/.]+$/, "");
+      const mergedName = `${baseName}-merged.${this.settings.outputSettings.outputExtension}`;
+      const outputFileData = { ...fileDataList[0], name: mergedName };
+      const outputPath = await this.saveConversionResult(
+        outputFileData,
+        conversionResult.markdown,
+        this.extractSuggestedFilename(conversionResult.markdown)
+      );
+      return {
+        ...conversionResult,
+        outputPath,
+        sourcePath: fileDataList[0].path,
+        duration: Date.now() - startTime
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        markdown: "",
+        sourcePath: "",
+        outputPath: "",
+        provider: this.settings.currentModel || "unknown",
+        duration: Date.now() - startTime,
+        success: false,
+        error: errorMessage
+      };
+    }
   }
   /**
    * 保存转换结果
@@ -2475,6 +2616,7 @@ var ConversionModal = class extends import_obsidian6.Modal {
   selectedFiles = [];
   fileCheckboxes = /* @__PURE__ */ new Map();
   folderCheckboxes = /* @__PURE__ */ new Map();
+  mergeSelected = false;
   constructor(app, plugin) {
     super(app);
     this.plugin = plugin;
@@ -2532,6 +2674,13 @@ var ConversionModal = class extends import_obsidian6.Modal {
     const statsEl = contentEl.createDiv();
     statsEl.addClass("file-stats");
     statsEl.textContent = `\u5DF2\u9009\u62E9 ${this.selectedFiles.length} / ${supportedFiles.length} \u4E2A\u6587\u4EF6`;
+    const mergeContainer = contentEl.createDiv();
+    mergeContainer.addClass("merge-option-container");
+    const mergeCheckbox = mergeContainer.createEl("input", { type: "checkbox" });
+    const mergeLabel = mergeContainer.createEl("label", { text: "\u5408\u5E76\u4E3A\u5355\u4E2AMarkdown\uFF08\u4EC5\u56FE\u7247\uFF09" });
+    mergeCheckbox.addEventListener("change", () => {
+      this.mergeSelected = mergeCheckbox.checked;
+    });
     const buttonContainer = contentEl.createDiv();
     buttonContainer.addClass("modal-button-container");
     const cancelButton = buttonContainer.createEl("button", {
@@ -2552,7 +2701,7 @@ var ConversionModal = class extends import_obsidian6.Modal {
       }
       this.close();
       const filePaths = this.selectedFiles.map((file) => file.path);
-      await this.plugin.convertFiles(filePaths);
+      await this.plugin.confirmAndConvertSelection(filePaths, this.mergeSelected);
     };
   }
   onClose() {
@@ -2714,8 +2863,410 @@ var ConversionModal = class extends import_obsidian6.Modal {
 // src/main.ts
 init_defaults();
 
-// src/ui/simple-settings-tab.ts
+// src/ui/confirm-modal.ts
 var import_obsidian7 = require("obsidian");
+init_file_processor();
+var ConfirmConversionModal = class extends import_obsidian7.Modal {
+  options;
+  includeSubfolders = true;
+  includeImages = true;
+  includePdfs = true;
+  pdfMode = "all";
+  pdfRangeStart = "";
+  pdfRangeEnd = "";
+  pdfList = "";
+  pdfTotalPages = null;
+  countsEl = null;
+  confirmBtn = null;
+  pdfSectionEl = null;
+  pdfInfoEl = null;
+  estimateEl = null;
+  outputInfoEl = null;
+  constructor(app, options) {
+    super(app);
+    this.options = options;
+    this.modalEl.addClass("hand-markdown-ai-modal");
+    this.titleEl.setText("\u786E\u8BA4\u8F6C\u6362");
+  }
+  async onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    const summary = contentEl.createDiv({ attr: { style: "margin-bottom: 12px; font-size: 13px;" } });
+    summary.setText(this.getModeText());
+    const rangeSection = contentEl.createDiv({ attr: { style: "margin-bottom: 12px;" } });
+    if (this.options.mode === "folder") {
+      rangeSection.createEl("div", { text: `\u6587\u4EF6\u5939\uFF1A${this.options.folderPath || ""}`, attr: { style: "margin-bottom: 8px;" } });
+      const subfolderRow = rangeSection.createDiv({ attr: { style: "display:flex; align-items:center; gap:8px; margin-bottom: 8px;" } });
+      const subfolderCheckbox = subfolderRow.createEl("input", { type: "checkbox" });
+      subfolderCheckbox.checked = this.includeSubfolders;
+      subfolderRow.createEl("label", { text: "\u5305\u542B\u5B50\u6587\u4EF6\u5939" });
+      subfolderCheckbox.addEventListener("change", () => {
+        this.includeSubfolders = subfolderCheckbox.checked;
+        this.refreshCounts();
+      });
+      const typeRow = rangeSection.createDiv({ attr: { style: "display:flex; align-items:center; gap:12px;" } });
+      const imageCheckbox = typeRow.createEl("input", { type: "checkbox" });
+      imageCheckbox.checked = this.includeImages;
+      typeRow.createEl("label", { text: "\u56FE\u7247" });
+      imageCheckbox.addEventListener("change", () => {
+        this.includeImages = imageCheckbox.checked;
+        this.refreshCounts();
+      });
+      const pdfCheckbox = typeRow.createEl("input", { type: "checkbox" });
+      pdfCheckbox.checked = this.includePdfs;
+      typeRow.createEl("label", { text: "PDF" });
+      pdfCheckbox.addEventListener("change", () => {
+        this.includePdfs = pdfCheckbox.checked;
+        this.refreshCounts();
+        this.togglePdfSection();
+      });
+    }
+    this.countsEl = contentEl.createDiv({ attr: { style: "margin-bottom: 12px; font-size: 12px; opacity:.85;" } });
+    this.refreshCounts();
+    this.pdfSectionEl = contentEl.createDiv({ attr: { style: "margin-bottom: 12px; display:none;" } });
+    this.buildPdfSection(this.pdfSectionEl);
+    await this.initPdfInfo();
+    this.togglePdfSection();
+    const outputSection = contentEl.createDiv({ attr: { style: "margin-bottom: 12px;" } });
+    outputSection.createEl("div", { text: "\u8F93\u51FA\u8BBE\u7F6E", attr: { style: "margin-bottom: 6px; font-weight:600;" } });
+    this.outputInfoEl = outputSection.createDiv({ attr: { style: "font-size: 12px; opacity:.85; display:flex; flex-direction:column; gap:4px;" } });
+    this.renderOutputInfo();
+    const estimateSection = contentEl.createDiv({ attr: { style: "margin-bottom: 12px;" } });
+    estimateSection.createEl("div", { text: "\u6210\u672C\u9884\u4F30", attr: { style: "margin-bottom: 6px; font-weight:600;" } });
+    this.estimateEl = estimateSection.createDiv({ attr: { style: "font-size: 12px; opacity:.85; display:flex; flex-direction:column; gap:4px;" } });
+    this.refreshEstimate();
+    const buttonRow = contentEl.createDiv({ attr: { style: "display:flex; justify-content:flex-end; gap:10px; margin-top: 16px;" } });
+    const cancelBtn = buttonRow.createEl("button", { text: "\u8FD4\u56DE" });
+    cancelBtn.onclick = () => this.close();
+    this.confirmBtn = buttonRow.createEl("button", { text: "\u5F00\u59CB\u8F6C\u6362", cls: "mod-cta" });
+    this.confirmBtn.onclick = async () => {
+      const result = this.buildResult();
+      if (!result)
+        return;
+      await this.options.onConfirm(result);
+      this.close();
+    };
+  }
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+  getModeText() {
+    switch (this.options.mode) {
+      case "folder":
+        return "\u8F6C\u6362\u8303\u56F4\uFF1A\u6587\u4EF6\u5939";
+      case "merge":
+        return "\u8F6C\u6362\u65B9\u5F0F\uFF1A\u591A\u56FE\u5408\u5E76\u4E3A\u5355\u4E2AMarkdown";
+      case "files":
+        return "\u8F6C\u6362\u8303\u56F4\uFF1A\u591A\u6587\u4EF6";
+      case "file":
+      default:
+        return "\u8F6C\u6362\u8303\u56F4\uFF1A\u5355\u6587\u4EF6";
+    }
+  }
+  buildPdfSection(container) {
+    container.createEl("div", { text: "PDF\u9875\u8303\u56F4", attr: { style: "margin-bottom: 6px; font-weight:600;" } });
+    this.pdfInfoEl = container.createDiv({ attr: { style: "margin-bottom: 8px; font-size: 12px; opacity:.8;" } });
+    this.pdfInfoEl.setText("\u8BFB\u53D6\u9875\u6570\u4E2D...");
+    const modeRow = container.createDiv({ attr: { style: "display:flex; flex-direction:column; gap:6px;" } });
+    const allRow = modeRow.createDiv({ attr: { style: "display:flex; align-items:center; gap:8px;" } });
+    const allRadio = allRow.createEl("input", { attr: { type: "radio", name: "pdf-range", value: "all" } });
+    allRadio.checked = true;
+    allRow.createEl("label", { text: "\u5168\u90E8\u9875" });
+    allRadio.addEventListener("change", () => {
+      if (allRadio.checked)
+        this.pdfMode = "all";
+      this.refreshEstimate();
+    });
+    const rangeRow = modeRow.createDiv({ attr: { style: "display:flex; align-items:center; gap:8px;" } });
+    const rangeRadio = rangeRow.createEl("input", { attr: { type: "radio", name: "pdf-range", value: "range" } });
+    rangeRow.createEl("label", { text: "\u9875\u7801\u8303\u56F4" });
+    const rangeStart = rangeRow.createEl("input", { type: "number", placeholder: "\u8D77\u59CB", attr: { style: "width: 80px;" } });
+    const rangeEnd = rangeRow.createEl("input", { type: "number", placeholder: "\u7ED3\u675F", attr: { style: "width: 80px;" } });
+    rangeStart.addEventListener("input", () => {
+      this.pdfRangeStart = rangeStart.value;
+      this.refreshEstimate();
+    });
+    rangeEnd.addEventListener("input", () => {
+      this.pdfRangeEnd = rangeEnd.value;
+      this.refreshEstimate();
+    });
+    rangeRadio.addEventListener("change", () => {
+      if (rangeRadio.checked)
+        this.pdfMode = "range";
+      this.refreshEstimate();
+    });
+    const listRow = modeRow.createDiv({ attr: { style: "display:flex; align-items:center; gap:8px;" } });
+    const listRadio = listRow.createEl("input", { attr: { type: "radio", name: "pdf-range", value: "list" } });
+    listRow.createEl("label", { text: "\u6307\u5B9A\u9875" });
+    const listInput = listRow.createEl("input", { type: "text", placeholder: "1,3,5-7", attr: { style: "flex:1;" } });
+    listInput.addEventListener("input", () => {
+      this.pdfList = listInput.value;
+      this.refreshEstimate();
+    });
+    listRadio.addEventListener("change", () => {
+      if (listRadio.checked)
+        this.pdfMode = "list";
+      this.refreshEstimate();
+    });
+  }
+  async initPdfInfo() {
+    const pdfTargets = this.getPdfTargets();
+    if (pdfTargets.length === 1) {
+      const pdfPath = pdfTargets[0];
+      const file = this.app.vault.getAbstractFileByPath(pdfPath);
+      if (file instanceof import_obsidian7.TFile) {
+        try {
+          const buffer = await this.app.vault.readBinary(file);
+          const info = await PDFProcessor.getPdfInfo(buffer);
+          this.pdfTotalPages = info.numPages;
+          if (this.pdfInfoEl) {
+            this.pdfInfoEl.setText(`\u603B\u9875\u6570\uFF1A${info.numPages}`);
+          }
+          this.refreshEstimate();
+        } catch {
+          if (this.pdfInfoEl) {
+            this.pdfInfoEl.setText("\u65E0\u6CD5\u8BFB\u53D6\u9875\u6570");
+          }
+        }
+      }
+    } else if (this.pdfInfoEl) {
+      this.pdfInfoEl.setText("\u591APDF\u6587\u4EF6\uFF0C\u9875\u6570\u4E0D\u505A\u6821\u9A8C");
+    }
+  }
+  togglePdfSection() {
+    if (!this.pdfSectionEl)
+      return;
+    const pdfTargets = this.getPdfTargets();
+    if (pdfTargets.length > 0 && this.options.mode !== "merge") {
+      this.pdfSectionEl.style.display = "";
+    } else {
+      this.pdfSectionEl.style.display = "none";
+    }
+    this.refreshEstimate();
+  }
+  refreshCounts() {
+    if (!this.countsEl)
+      return;
+    const { images, pdfs, total } = this.getCounts();
+    this.countsEl.setText(`\u56FE\u7247 ${images} | PDF ${pdfs} | \u603B\u8BA1 ${total}`);
+    if (this.confirmBtn) {
+      this.confirmBtn.disabled = total === 0;
+    }
+    this.refreshEstimate();
+  }
+  renderOutputInfo() {
+    if (!this.outputInfoEl)
+      return;
+    const { outputSettings } = this.options.settings;
+    this.outputInfoEl.empty();
+    const outputDir = (outputSettings.outputDir || "").trim();
+    const outputDirText = outputDir ? outputDir : "Vault \u6839\u76EE\u5F55";
+    const namingText = outputSettings.keepOriginalName ? "\u4FDD\u6301\u539F\u6587\u4EF6\u540D" : "\u4F18\u5148AI\u6807\u9898\uFF0C\u5176\u6B21\u65F6\u95F4\u6233";
+    this.outputInfoEl.createDiv({ text: `\u8F93\u51FA\u76EE\u5F55\uFF1A${outputDirText}` });
+    this.outputInfoEl.createDiv({ text: `\u6587\u4EF6\u6269\u5C55\u540D\uFF1A.${outputSettings.outputExtension}` });
+    this.outputInfoEl.createDiv({ text: `\u547D\u540D\u7B56\u7565\uFF1A${namingText}` });
+    this.outputInfoEl.createDiv({ text: "\u540C\u540D\u5904\u7406\uFF1A\u81EA\u52A8\u52A0\u5E8F\u53F7\uFF0C\u4E0D\u8986\u76D6" });
+    this.outputInfoEl.createDiv({ text: `\u81EA\u52A8\u6253\u5F00\uFF1A${outputSettings.autoOpen ? "\u662F" : "\u5426"}` });
+    if (this.options.mode === "merge") {
+      this.outputInfoEl.createDiv({ text: "\u5408\u5E76\u8F93\u51FA\uFF1A\u9996\u4E2A\u6587\u4EF6\u540D + -merged" });
+    }
+  }
+  refreshEstimate() {
+    if (!this.estimateEl)
+      return;
+    const imageCount = this.getImageCount();
+    const pdfTargets = this.getPdfTargets();
+    const pdfInfo = this.getPdfPageCountInfo();
+    const imagesPerRequest = this.options.settings.advancedSettings?.imagesPerRequest || 1;
+    this.estimateEl.empty();
+    const pdfText = pdfTargets.length === 0 ? "PDF\u9875\uFF1A0" : pdfInfo.count === null ? "PDF\u9875\uFF1A\u672A\u77E5" : `PDF\u9875\uFF1A${pdfInfo.count}${pdfInfo.approx ? "\uFF08\u4F30\u7B97\uFF09" : ""}`;
+    this.estimateEl.createDiv({ text: `\u56FE\u7247\uFF1A${imageCount}` });
+    this.estimateEl.createDiv({ text: pdfText });
+    if (pdfTargets.length > 0 && pdfInfo.count === null) {
+      const minBatches = imageCount > 0 ? Math.ceil(imageCount / imagesPerRequest) : 0;
+      const prefix = minBatches > 0 ? `\u2265 ${minBatches}` : "\u65E0\u6CD5\u4F30\u7B97";
+      this.estimateEl.createDiv({ text: `\u9884\u8BA1AI\u8BF7\u6C42\uFF1A${prefix} \u6279\uFF08\u4E0D\u542BPDF\uFF09` });
+      this.estimateEl.createDiv({ text: `\u6BCF\u6279\u56FE\u7247\u6570\uFF1A${imagesPerRequest}` });
+      return;
+    }
+    const totalImages = imageCount + (pdfInfo.count || 0);
+    const batches = totalImages > 0 ? Math.ceil(totalImages / imagesPerRequest) : 0;
+    this.estimateEl.createDiv({ text: `\u9884\u8BA1AI\u8BF7\u6C42\uFF1A${batches} \u6279` });
+    this.estimateEl.createDiv({ text: `\u6BCF\u6279\u56FE\u7247\u6570\uFF1A${imagesPerRequest}` });
+  }
+  getImageCount() {
+    return this.getFilteredFiles().filter((path) => this.isImageLike(path) && !this.isPdf(path)).length;
+  }
+  getPdfPageCountInfo() {
+    const pdfTargets = this.getPdfTargets();
+    if (pdfTargets.length === 0)
+      return { count: 0, approx: false };
+    if (this.pdfMode === "all") {
+      if (pdfTargets.length === 1 && this.pdfTotalPages) {
+        return { count: this.pdfTotalPages, approx: false };
+      }
+      return { count: null, approx: pdfTargets.length > 1 };
+    }
+    if (this.pdfMode === "range") {
+      const start = parseInt(this.pdfRangeStart);
+      const end = parseInt(this.pdfRangeEnd);
+      if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || start > end) {
+        return { count: null, approx: pdfTargets.length > 1 };
+      }
+      const count = end - start + 1;
+      return pdfTargets.length > 1 ? { count: count * pdfTargets.length, approx: true } : { count, approx: false };
+    }
+    const parsed = this.parsePageList(this.pdfList);
+    if (parsed.length === 0)
+      return { count: null, approx: pdfTargets.length > 1 };
+    const listCount = parsed.length;
+    return pdfTargets.length > 1 ? { count: listCount * pdfTargets.length, approx: true } : { count: listCount, approx: false };
+  }
+  getCounts() {
+    const files = this.getFilteredFiles();
+    let images = 0;
+    let pdfs = 0;
+    files.forEach((path) => {
+      if (this.isPdf(path))
+        pdfs++;
+      else if (this.isImageLike(path))
+        images++;
+    });
+    return { images, pdfs, total: files.length };
+  }
+  getPdfTargets() {
+    return this.getFilteredFiles().filter((path) => this.isPdf(path));
+  }
+  getFilteredFiles() {
+    const baseFiles = this.getBaseFiles();
+    if (this.options.mode !== "folder") {
+      return baseFiles;
+    }
+    return baseFiles.filter((path) => {
+      const isPdf = this.isPdf(path);
+      const isImage = this.isImageLike(path);
+      if (isPdf && this.includePdfs)
+        return true;
+      if (isImage && this.includeImages)
+        return true;
+      return false;
+    });
+  }
+  getBaseFiles() {
+    if (this.options.mode === "file") {
+      return this.options.filePath ? [this.options.filePath] : [];
+    }
+    if (this.options.mode === "files" || this.options.mode === "merge") {
+      return this.options.filePaths ? this.options.filePaths.slice() : [];
+    }
+    if (this.options.mode === "folder") {
+      return this.collectFolderFiles(this.options.folderPath || "", this.includeSubfolders);
+    }
+    return [];
+  }
+  collectFolderFiles(folderPath, includeSubfolders) {
+    const root = this.app.vault.getAbstractFileByPath(folderPath);
+    const files = [];
+    const walk = (node) => {
+      if (!node)
+        return;
+      if (node instanceof import_obsidian7.TFile) {
+        if (ConversionService.isFileSupported(node.path)) {
+          files.push(node.path);
+        }
+      } else if (node instanceof import_obsidian7.TFolder) {
+        node.children.forEach((child) => {
+          if (includeSubfolders || child instanceof import_obsidian7.TFile) {
+            walk(child);
+          }
+        });
+      }
+    };
+    walk(root);
+    return files;
+  }
+  isPdf(path) {
+    return FileProcessor.getFileMimeType(path) === "application/pdf";
+  }
+  isImageLike(path) {
+    const lower = path.toLowerCase();
+    if (lower.endsWith(".excalidraw") || lower.endsWith(".excalidraw.md"))
+      return true;
+    const mime = FileProcessor.getFileMimeType(path);
+    return !!mime && mime.startsWith("image/");
+  }
+  buildResult() {
+    const files = this.getFilteredFiles();
+    if (files.length === 0) {
+      new import_obsidian7.Notice("\u6CA1\u6709\u53EF\u8F6C\u6362\u7684\u6587\u4EF6", 3e3);
+      return null;
+    }
+    if (this.options.mode === "merge") {
+      const hasPdf = files.some((path) => this.isPdf(path));
+      if (hasPdf) {
+        new import_obsidian7.Notice("\u5408\u5E76\u4EC5\u652F\u6301\u56FE\u7247\u6587\u4EF6", 3e3);
+        return null;
+      }
+    }
+    const pdfTargets = files.filter((path) => this.isPdf(path));
+    let pdfPages;
+    if (pdfTargets.length > 0 && this.pdfMode !== "all") {
+      if (this.pdfMode === "range") {
+        const start = parseInt(this.pdfRangeStart);
+        const end = parseInt(this.pdfRangeEnd);
+        if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || start > end) {
+          new import_obsidian7.Notice("\u9875\u7801\u8303\u56F4\u4E0D\u5408\u6CD5", 3e3);
+          return null;
+        }
+        pdfPages = [];
+        for (let i = start; i <= end; i++) {
+          pdfPages.push(i);
+        }
+      } else if (this.pdfMode === "list") {
+        const parsed = this.parsePageList(this.pdfList);
+        if (parsed.length === 0) {
+          new import_obsidian7.Notice("\u8BF7\u8F93\u5165\u6709\u6548\u9875\u7801\u5217\u8868", 3e3);
+          return null;
+        }
+        pdfPages = parsed;
+      }
+      if (pdfPages && this.pdfTotalPages) {
+        const outOfRange = pdfPages.some((p) => p < 1 || p > this.pdfTotalPages);
+        if (outOfRange) {
+          new import_obsidian7.Notice("\u9875\u7801\u8D85\u51FA\u8303\u56F4", 3e3);
+          return null;
+        }
+      }
+    }
+    return { filePaths: files, pdfPages };
+  }
+  parsePageList(input) {
+    const tokens = input.split(",").map((t) => t.trim()).filter(Boolean);
+    const pages = [];
+    tokens.forEach((token) => {
+      if (token.includes("-")) {
+        const [startStr, endStr] = token.split("-").map((s) => s.trim());
+        const start = parseInt(startStr);
+        const end = parseInt(endStr);
+        if (!isNaN(start) && !isNaN(end) && start > 0 && end >= start) {
+          for (let i = start; i <= end; i++) {
+            pages.push(i);
+          }
+        }
+      } else {
+        const num = parseInt(token);
+        if (!isNaN(num) && num > 0) {
+          pages.push(num);
+        }
+      }
+    });
+    return Array.from(new Set(pages)).sort((a, b) => a - b);
+  }
+};
+
+// src/ui/simple-settings-tab.ts
+var import_obsidian8 = require("obsidian");
 init_constants();
 var ModelInputSuggest = class {
   inputEl;
@@ -2784,7 +3335,7 @@ var ModelInputSuggest = class {
     }
   }
 };
-var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
+var SimpleSettingsTab = class extends import_obsidian8.PluginSettingTab {
   plugin;
   constructor(app, plugin) {
     super(app, plugin);
@@ -2839,7 +3390,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       text: "Base URL\uFF1A\u53EF\u586B\u5199\u7B2C\u4E09\u65B9\u517C\u5BB9\u5730\u5740\uFF08\u4F8B\u5982\u81EA\u5EFA\u8F6C\u53D1\u3001\u805A\u5408\u7F51\u5173\u3001Ollama \u7B49\uFF09\u3002",
       attr: { style: "color: var(--text-muted); margin-bottom: 15px;" }
     });
-    new import_obsidian7.Setting(containerEl).setName("\u4F7F\u7528 Obsidian Keychain \u5B89\u5168\u5B58\u50A8").setDesc("\u5F00\u542F\u540E\uFF0C\u65B0\u914D\u7F6E\u7684 API Key \u5C06\u5B58\u50A8\u5728\u7CFB\u7EDF\u94A5\u5319\u4E32\u4E2D").addToggle((toggle) => toggle.setValue(this.plugin.settings.useKeychain ?? true).onChange(async (value) => {
+    new import_obsidian8.Setting(containerEl).setName("\u4F7F\u7528 Obsidian Keychain \u5B89\u5168\u5B58\u50A8").setDesc("\u5F00\u542F\u540E\uFF0C\u65B0\u914D\u7F6E\u7684 API Key \u5C06\u5B58\u50A8\u5728\u7CFB\u7EDF\u94A5\u5319\u4E32\u4E2D").addToggle((toggle) => toggle.setValue(this.plugin.settings.useKeychain ?? true).onChange(async (value) => {
       this.plugin.settings.useKeychain = value;
       await this.plugin.saveSettings();
       if (value) {
@@ -2946,7 +3497,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         attr: { colspan: "4", style: "text-align: center; color: var(--text-muted); font-style: italic; padding: 20px;" }
       });
     }
-    new import_obsidian7.Setting(containerEl).setName("\u5F53\u524D\u6A21\u578B").setDesc("\u9009\u62E9\u5F53\u524D\u4F7F\u7528\u7684AI\u6A21\u578B\uFF08\u8F6C\u6362\u56FE\u7247/PDF \u9700\u8981\u591A\u6A21\u6001\u6216\u89C6\u89C9\u6A21\u578B\uFF09").addDropdown((dropdown) => {
+    new import_obsidian8.Setting(containerEl).setName("\u5F53\u524D\u6A21\u578B").setDesc("\u9009\u62E9\u5F53\u524D\u4F7F\u7528\u7684AI\u6A21\u578B\uFF08\u8F6C\u6362\u56FE\u7247/PDF \u9700\u8981\u591A\u6A21\u6001\u6216\u89C6\u89C9\u6A21\u578B\uFF09").addDropdown((dropdown) => {
       const enabledModels = Object.keys(this.plugin.settings.models).filter((id) => this.plugin.settings.models[id].enabled);
       enabledModels.forEach((id) => {
         const model = this.plugin.settings.models[id];
@@ -2961,19 +3512,19 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         await this.plugin.saveSettings();
       });
     });
-    new import_obsidian7.Setting(containerEl).setName("\u6D4B\u8BD5API\u8FDE\u63A5").setDesc("\u5BF9\u5F53\u524D\u6A21\u578B\u53D1\u9001\u4E00\u4E2A\u6700\u5C0F\u8BF7\u6C42\uFF0C\u7528\u4E8E\u5FEB\u901F\u9A8C\u8BC1 Base URL / API Key / Model").addButton(
+    new import_obsidian8.Setting(containerEl).setName("\u6D4B\u8BD5API\u8FDE\u63A5").setDesc("\u5BF9\u5F53\u524D\u6A21\u578B\u53D1\u9001\u4E00\u4E2A\u6700\u5C0F\u8BF7\u6C42\uFF0C\u7528\u4E8E\u5FEB\u901F\u9A8C\u8BC1 Base URL / API Key / Model").addButton(
       (button) => button.setButtonText("\u6D4B\u8BD5\u8FDE\u63A5").onClick(async () => {
         const originalText = button.buttonEl.textContent || "\u6D4B\u8BD5\u8FDE\u63A5";
         button.setButtonText("\u6D4B\u8BD5\u4E2D...");
         try {
           const result = await this.plugin.aiService.testConnection();
           if (result.success) {
-            new import_obsidian7.Notice("\u2705 API\u8FDE\u63A5\u6210\u529F");
+            new import_obsidian8.Notice("\u2705 API\u8FDE\u63A5\u6210\u529F");
           } else {
-            new import_obsidian7.Notice("\u274C API\u8FDE\u63A5\u5931\u8D25: " + (result.message || "\u672A\u77E5\u9519\u8BEF"));
+            new import_obsidian8.Notice("\u274C API\u8FDE\u63A5\u5931\u8D25: " + (result.message || "\u672A\u77E5\u9519\u8BEF"));
           }
         } catch (error) {
-          new import_obsidian7.Notice("\u274C \u6D4B\u8BD5\u5931\u8D25: " + (error?.message || String(error)));
+          new import_obsidian8.Notice("\u274C \u6D4B\u8BD5\u5931\u8D25: " + (error?.message || String(error)));
         } finally {
           button.setButtonText(originalText);
         }
@@ -3004,7 +3555,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     }
   }
   showProviderModal(mode, providerId) {
-    const modal = new import_obsidian7.Modal(this.app);
+    const modal = new import_obsidian8.Modal(this.app);
     modal.titleEl.setText(mode === "add" ? "\u6DFB\u52A0\u4F9B\u5E94\u5546 (Add Provider)" : `\u7F16\u8F91\u4F9B\u5E94\u5546: ${providerId}`);
     const content = modal.contentEl.createDiv({ attr: { style: "display: flex; flex-direction: column; gap: 12px;" } });
     const provider = providerId ? this.plugin.settings.providers[providerId] : { apiKey: "", baseUrl: "", enabled: true, type: "openai", name: "" };
@@ -3019,15 +3570,15 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     if (!hasSecretStorage)
       useKeychain = false;
     let apiKeySetting;
-    new import_obsidian7.Setting(content).setName("ID").setDesc("\u7528\u4E8E\u5F15\u7528\u7684\u552F\u4E00\u6807\u8BC6").addText((text) => {
+    new import_obsidian8.Setting(content).setName("ID").setDesc("\u7528\u4E8E\u5F15\u7528\u7684\u552F\u4E00\u6807\u8BC6").addText((text) => {
       text.setPlaceholder("my-provider").setValue(idValue).onChange((value) => idValue = value.trim());
       if (mode === "edit")
         text.setDisabled(true);
     });
-    new import_obsidian7.Setting(content).setName("\u663E\u793A\u540D\u79F0").addText(
+    new import_obsidian8.Setting(content).setName("\u663E\u793A\u540D\u79F0").addText(
       (text) => text.setPlaceholder("OpenAI").setValue(provider.name || "").onChange((value) => provider.name = value.trim())
     );
-    new import_obsidian7.Setting(content).setName("\u7C7B\u578B").setDesc("openai \u517C\u5BB9\u7C7B\u578B\u6807\u8BC6").addDropdown((dropdown) => {
+    new import_obsidian8.Setting(content).setName("\u7C7B\u578B").setDesc("openai \u517C\u5BB9\u7C7B\u578B\u6807\u8BC6").addDropdown((dropdown) => {
       const items = [
         { id: "openai", name: "OpenAI (\u517C\u5BB9)" },
         { id: "anthropic", name: "Anthropic" },
@@ -3044,17 +3595,17 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       });
     });
-    new import_obsidian7.Setting(content).setName("Base URL").setDesc("\u53EF\u9009\uFF0COpenAI \u517C\u5BB9\u63A5\u53E3\u5730\u5740").addText(
+    new import_obsidian8.Setting(content).setName("Base URL").setDesc("\u53EF\u9009\uFF0COpenAI \u517C\u5BB9\u63A5\u53E3\u5730\u5740").addText(
       (text) => text.setPlaceholder("https://api.openai.com/v1").setValue(baseUrl || "").onChange((value) => {
         baseUrl = value.trim();
         provider.baseUrl = baseUrl;
       })
     );
     const otherProvidersWithSecrets = Object.entries(this.plugin.settings.providers).filter(([id, p]) => id !== (providerId || "") && p.apiKey && p.apiKey.startsWith("secret:")).map(([id, p]) => ({ id, name: p.name || id, secretRef: p.apiKey }));
-    apiKeySetting = new import_obsidian7.Setting(content).setName("API Key").setDesc("\u8BF7\u8F93\u5165 API Key");
+    apiKeySetting = new import_obsidian8.Setting(content).setName("API Key").setDesc("\u8BF7\u8F93\u5165 API Key");
     let apiKeyComp;
     if (otherProvidersWithSecrets.length > 0) {
-      new import_obsidian7.Setting(content).setName("\u590D\u7528\u5DF2\u6709 Key").setDesc("\u9009\u62E9\u590D\u7528\u5176\u4ED6\u4F9B\u5E94\u5546\u5DF2\u914D\u7F6E\u7684 Keychain \u5BC6\u94A5").addDropdown((dropdown) => {
+      new import_obsidian8.Setting(content).setName("\u590D\u7528\u5DF2\u6709 Key").setDesc("\u9009\u62E9\u590D\u7528\u5176\u4ED6\u4F9B\u5E94\u5546\u5DF2\u914D\u7F6E\u7684 Keychain \u5BC6\u94A5").addDropdown((dropdown) => {
         dropdown.addOption("", "\u4E0D\u590D\u7528 (\u9ED8\u8BA4)");
         otherProvidersWithSecrets.forEach((p) => dropdown.addOption(p.secretRef, `${p.name} (${p.id})`));
         if (apiKey && apiKey.startsWith("secret:") && otherProvidersWithSecrets.some((p) => p.secretRef === apiKey)) {
@@ -3099,7 +3650,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       });
     });
     this.updateApiKeyDesc(apiKeySetting, idValue || providerId || "", type);
-    new import_obsidian7.Setting(content).setName("\u542F\u7528").addToggle(
+    new import_obsidian8.Setting(content).setName("\u542F\u7528").addToggle(
       (toggle) => toggle.setValue(enabled).onChange((value) => {
         enabled = value;
         provider.enabled = value;
@@ -3111,11 +3662,11 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     const saveBtn = footer.createEl("button", { text: "\u4FDD\u5B58" });
     saveBtn.onclick = async () => {
       if (!idValue) {
-        new import_obsidian7.Notice("ID \u4E0D\u80FD\u4E3A\u7A7A");
+        new import_obsidian8.Notice("ID \u4E0D\u80FD\u4E3A\u7A7A");
         return;
       }
       if (mode === "add" && this.plugin.settings.providers[idValue]) {
-        new import_obsidian7.Notice("ID \u5DF2\u5B58\u5728");
+        new import_obsidian8.Notice("ID \u5DF2\u5B58\u5728");
         return;
       }
       const targetProviderId = mode === "add" ? idValue : providerId || idValue;
@@ -3140,7 +3691,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
             }
             this.plugin.settings.providers[targetProviderId].apiKey = `secret:${secretId}`;
           } catch (e) {
-            new import_obsidian7.Notice("Keychain \u4FDD\u5B58\u5931\u8D25\uFF0C\u5DF2\u4F7F\u7528\u666E\u901A\u5B58\u50A8");
+            new import_obsidian8.Notice("Keychain \u4FDD\u5B58\u5931\u8D25\uFF0C\u5DF2\u4F7F\u7528\u666E\u901A\u5B58\u50A8");
             this.plugin.settings.providers[targetProviderId].apiKey = apiKey;
           }
         } else {
@@ -3164,7 +3715,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
   async fetchModels(providerId) {
     const provider = this.plugin.settings.providers[providerId];
     if (!provider) {
-      new import_obsidian7.Notice("Provider not found");
+      new import_obsidian8.Notice("Provider not found");
       return null;
     }
     const type = provider.type || "openai";
@@ -3180,7 +3731,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       const resolvedConfig = await this.plugin.aiService.resolveConfig(tempConfig);
       apiKey = resolvedConfig.apiKey;
     } catch (e) {
-      new import_obsidian7.Notice("Failed to resolve API Key");
+      new import_obsidian8.Notice("Failed to resolve API Key");
       return null;
     }
     if (type === "ollama") {
@@ -3207,9 +3758,9 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     }
     try {
       const req = { url, method: "GET", headers, throw: false };
-      const resp = await (0, import_obsidian7.requestUrl)(req);
+      const resp = await (0, import_obsidian8.requestUrl)(req);
       if (resp.status >= 400) {
-        new import_obsidian7.Notice(`Error fetching models: ${resp.status} ${resp.text.slice(0, 100)}`);
+        new import_obsidian8.Notice(`Error fetching models: ${resp.status} ${resp.text.slice(0, 100)}`);
         return null;
       }
       const data = resp.json;
@@ -3238,17 +3789,17 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       }
       if (models.length === 0) {
-        new import_obsidian7.Notice("No models found in response.");
+        new import_obsidian8.Notice("No models found in response.");
         return null;
       }
       return models;
     } catch (e) {
-      new import_obsidian7.Notice(`Request failed: ${e?.message || String(e)}`);
+      new import_obsidian8.Notice(`Request failed: ${e?.message || String(e)}`);
       return null;
     }
   }
   showAddModelModal(category = MODEL_CATEGORIES.MULTIMODAL) {
-    const modal = new import_obsidian7.Modal(this.app);
+    const modal = new import_obsidian8.Modal(this.app);
     modal.titleEl.setText("\u6DFB\u52A0\u6A21\u578B (Add Model)");
     const { contentEl } = modal;
     let providerId = Object.keys(this.plugin.settings.providers)[0] || "";
@@ -3257,7 +3808,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     let apiModelIdInput;
     let internalIdInput;
     let suggest;
-    new import_obsidian7.Setting(contentEl).setName("\u4F9B\u5E94\u5546 (Provider)").setDesc("\u9009\u62E9\u8C03\u7528\u8BE5\u6A21\u578B\u4F7F\u7528\u7684\u670D\u52A1\u5546\u8D26\u6237").addDropdown((dropdown) => {
+    new import_obsidian8.Setting(contentEl).setName("\u4F9B\u5E94\u5546 (Provider)").setDesc("\u9009\u62E9\u8C03\u7528\u8BE5\u6A21\u578B\u4F7F\u7528\u7684\u670D\u52A1\u5546\u8D26\u6237").addDropdown((dropdown) => {
       Object.keys(this.plugin.settings.providers).forEach((pId) => {
         const p = this.plugin.settings.providers[pId];
         dropdown.addOption(pId, `${p.name || pId} (${p.type || "openai"})`);
@@ -3270,7 +3821,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       });
     });
     contentEl.createEl("hr", { attr: { style: "margin: 20px 0; border-color: var(--background-modifier-border);" } });
-    new import_obsidian7.Setting(contentEl).setName("\u6A21\u578B API ID (Model ID)").setDesc("\u70B9\u51FB\u53F3\u4FA7\u6309\u94AE\u83B7\u53D6\u6A21\u578B\u5217\u8868\uFF0C\u6216\u624B\u52A8\u8F93\u5165").addText((text) => {
+    new import_obsidian8.Setting(contentEl).setName("\u6A21\u578B API ID (Model ID)").setDesc("\u70B9\u51FB\u53F3\u4FA7\u6309\u94AE\u83B7\u53D6\u6A21\u578B\u5217\u8868\uFF0C\u6216\u624B\u52A8\u8F93\u5165").addText((text) => {
       apiModelIdInput = text;
       text.setPlaceholder("e.g. gpt-4o").onChange((v) => {
         apiModelId = v.trim();
@@ -3295,18 +3846,18 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       if (models) {
         suggest.setItems(models);
         suggest.open();
-        new import_obsidian7.Notice(`\u5DF2\u83B7\u53D6 ${models.length} \u4E2A\u53EF\u7528\u6A21\u578B`);
+        new import_obsidian8.Notice(`\u5DF2\u83B7\u53D6 ${models.length} \u4E2A\u53EF\u7528\u6A21\u578B`);
         apiModelIdInput.inputEl.focus();
       }
     }));
     const advancedDetails = contentEl.createEl("details");
     advancedDetails.createEl("summary", { text: "\u9AD8\u7EA7\u8BBE\u7F6E (Advanced: Internal ID / Category)", attr: { style: "color: var(--text-muted); cursor: pointer; margin-bottom: 10px;" } });
-    new import_obsidian7.Setting(advancedDetails).setName("\u63D2\u4EF6\u5185\u90E8 ID").setDesc("\u63D2\u4EF6\u914D\u7F6E\u4E2D\u4F7F\u7528\u7684\u552F\u4E00\u952E\u503C\uFF0C\u901A\u5E38\u65E0\u9700\u4FEE\u6539").addText((text) => {
+    new import_obsidian8.Setting(advancedDetails).setName("\u63D2\u4EF6\u5185\u90E8 ID").setDesc("\u63D2\u4EF6\u914D\u7F6E\u4E2D\u4F7F\u7528\u7684\u552F\u4E00\u952E\u503C\uFF0C\u901A\u5E38\u65E0\u9700\u4FEE\u6539").addText((text) => {
       internalIdInput = text;
       text.onChange((v) => internalId = v.trim());
     });
     let chosenCategory = category;
-    new import_obsidian7.Setting(advancedDetails).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
+    new import_obsidian8.Setting(advancedDetails).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
       Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
       drop.setValue(String(chosenCategory));
       drop.onChange((v) => chosenCategory = v);
@@ -3316,11 +3867,11 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     const save = btns.createEl("button", { text: "\u6DFB\u52A0\u6A21\u578B", cls: "mod-cta" });
     save.onclick = async () => {
       if (!apiModelId || !internalId) {
-        new import_obsidian7.Notice("\u8BF7\u586B\u5199\u5B8C\u6574\u4FE1\u606F (API ID)");
+        new import_obsidian8.Notice("\u8BF7\u586B\u5199\u5B8C\u6574\u4FE1\u606F (API ID)");
         return;
       }
       if (this.plugin.settings.models[internalId]) {
-        new import_obsidian7.Notice("\u8BE5\u5185\u90E8 ID \u5DF2\u5B58\u5728\uFF0C\u8BF7\u5728\u9AD8\u7EA7\u8BBE\u7F6E\u4E2D\u4FEE\u6539 ID");
+        new import_obsidian8.Notice("\u8BE5\u5185\u90E8 ID \u5DF2\u5B58\u5728\uFF0C\u8BF7\u5728\u9AD8\u7EA7\u8BBE\u7F6E\u4E2D\u4FEE\u6539 ID");
         return;
       }
       this.plugin.settings.models[internalId] = {
@@ -3335,12 +3886,12 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       modal.close();
       this.display();
-      new import_obsidian7.Notice(`\u5DF2\u6DFB\u52A0\u6A21\u578B: ${apiModelId}`);
+      new import_obsidian8.Notice(`\u5DF2\u6DFB\u52A0\u6A21\u578B: ${apiModelId}`);
     };
     modal.open();
   }
   showEditModelModal(modelId) {
-    const modal = new import_obsidian7.Modal(this.app);
+    const modal = new import_obsidian8.Modal(this.app);
     const m = this.plugin.settings.models[modelId];
     modal.titleEl.setText(`\u7F16\u8F91\u6A21\u578B: ${m.model || m.id}`);
     const { contentEl } = modal;
@@ -3349,7 +3900,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     let category = m.category || MODEL_CATEGORIES.TEXT;
     let apiModelIdInput;
     let suggest;
-    new import_obsidian7.Setting(contentEl).setName("\u4F9B\u5E94\u5546 (Provider)").setDesc("\u66F4\u6539\u8BE5\u6A21\u578B\u6240\u5C5E\u7684\u670D\u52A1\u5546").addDropdown((dropdown) => {
+    new import_obsidian8.Setting(contentEl).setName("\u4F9B\u5E94\u5546 (Provider)").setDesc("\u66F4\u6539\u8BE5\u6A21\u578B\u6240\u5C5E\u7684\u670D\u52A1\u5546").addDropdown((dropdown) => {
       Object.keys(this.plugin.settings.providers).forEach((pId) => {
         const p = this.plugin.settings.providers[pId];
         dropdown.addOption(pId, `${p.name || pId} (${p.type || "openai"})`);
@@ -3362,7 +3913,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       });
     });
     contentEl.createEl("hr", { attr: { style: "margin: 20px 0; border-color: var(--background-modifier-border);" } });
-    new import_obsidian7.Setting(contentEl).setName("\u6A21\u578B API ID").setDesc("\u70B9\u51FB\u53F3\u4FA7\u6309\u94AE\u83B7\u53D6\u6A21\u578B\u5217\u8868\uFF0C\u6216\u624B\u52A8\u8F93\u5165").addText((text) => {
+    new import_obsidian8.Setting(contentEl).setName("\u6A21\u578B API ID").setDesc("\u70B9\u51FB\u53F3\u4FA7\u6309\u94AE\u83B7\u53D6\u6A21\u578B\u5217\u8868\uFF0C\u6216\u624B\u52A8\u8F93\u5165").addText((text) => {
       apiModelIdInput = text;
       text.setValue(apiModelId).onChange((v) => apiModelId = v.trim());
       suggest = new ModelInputSuggest(text.inputEl, [], (item) => {
@@ -3375,11 +3926,11 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       if (models) {
         suggest.setItems(models);
         suggest.open();
-        new import_obsidian7.Notice(`\u5DF2\u83B7\u53D6 ${models.length} \u4E2A\u53EF\u7528\u6A21\u578B`);
+        new import_obsidian8.Notice(`\u5DF2\u83B7\u53D6 ${models.length} \u4E2A\u53EF\u7528\u6A21\u578B`);
         apiModelIdInput.inputEl.focus();
       }
     }));
-    new import_obsidian7.Setting(contentEl).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
+    new import_obsidian8.Setting(contentEl).setName("\u7C7B\u522B").setDesc("\u8F6C\u6362\u56FE\u7247/PDF \u5EFA\u8BAE\u9009\u62E9 multimodal \u6216 vision").addDropdown((drop) => {
       Object.entries(MODEL_CATEGORIES).forEach(([key, value]) => drop.addOption(String(value), key));
       drop.setValue(String(category));
       drop.onChange((v) => category = v);
@@ -3389,7 +3940,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     const save = btns.createEl("button", { text: "\u4FDD\u5B58\u66F4\u6539", cls: "mod-cta" });
     save.onclick = async () => {
       if (!apiModelId) {
-        new import_obsidian7.Notice("\u4FE1\u606F\u4E0D\u80FD\u4E3A\u7A7A");
+        new import_obsidian8.Notice("\u4FE1\u606F\u4E0D\u80FD\u4E3A\u7A7A");
         return;
       }
       this.plugin.settings.models[modelId] = {
@@ -3415,26 +3966,26 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
   }
   addPdfSettings(containerEl) {
     containerEl.createEl("h3", { text: "\u{1F4C4} PDF \u5904\u7406" });
-    new import_obsidian7.Setting(containerEl).setName("\u56FE\u7247\u8D28\u91CF").setDesc("PDF \u8F6C\u56FE\u7247\u7684\u8D28\u91CF\uFF080.1-1.0\uFF0C\u8D8A\u9AD8\u8D8A\u6E05\u6670\u4F46\u6587\u4EF6\u8D8A\u5927\uFF09").addSlider(
+    new import_obsidian8.Setting(containerEl).setName("\u56FE\u7247\u8D28\u91CF").setDesc("PDF \u8F6C\u56FE\u7247\u7684\u8D28\u91CF\uFF080.1-1.0\uFF0C\u8D8A\u9AD8\u8D8A\u6E05\u6670\u4F46\u6587\u4EF6\u8D8A\u5927\uFF09").addSlider(
       (slider) => slider.setLimits(0.1, 1, 0.1).setValue(this.plugin.settings.advancedSettings?.pdfQuality || 0.8).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.advancedSettings.pdfQuality = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("\u56FE\u7247\u7F29\u653E").setDesc("PDF \u8F6C\u56FE\u7247\u7684\u7F29\u653E\u6BD4\u4F8B\uFF081.0-2.0\uFF0C\u8D8A\u9AD8\u8D8A\u6E05\u6670\uFF09").addSlider(
+    new import_obsidian8.Setting(containerEl).setName("\u56FE\u7247\u7F29\u653E").setDesc("PDF \u8F6C\u56FE\u7247\u7684\u7F29\u653E\u6BD4\u4F8B\uFF081.0-2.0\uFF0C\u8D8A\u9AD8\u8D8A\u6E05\u6670\uFF09").addSlider(
       (slider) => slider.setLimits(1, 2, 0.1).setValue(this.plugin.settings.advancedSettings?.pdfScale || 1.5).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.advancedSettings.pdfScale = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("\u6BCF\u6B21\u63D0\u4EA4\u56FE\u7247\u6570\u91CF").setDesc("PDF \u8F6C\u6362\u65F6\u6279\u91CF\u63D0\u4EA4\u7ED9 AI \u7684\u56FE\u7247\u5F20\u6570\uFF08\u5EFA\u8BAE 1-5\uFF09").addText(
+    new import_obsidian8.Setting(containerEl).setName("\u6BCF\u6B21\u63D0\u4EA4\u56FE\u7247\u6570\u91CF").setDesc("PDF \u8F6C\u6362\u65F6\u6279\u91CF\u63D0\u4EA4\u7ED9 AI \u7684\u56FE\u7247\u5F20\u6570\uFF08\u5EFA\u8BAE 1-5\uFF09").addText(
       (text) => text.setPlaceholder("1").setValue(String(this.plugin.settings.advancedSettings?.imagesPerRequest ?? 1)).onChange(async (value) => {
         const n = parseInt(value);
         if (!isNaN(n) && n > 0 && n <= 10) {
           this.plugin.settings.advancedSettings.imagesPerRequest = n;
           await this.plugin.saveSettings();
         } else if (value.trim()) {
-          new import_obsidian7.Notice("\u8BF7\u8F93\u5165 1-10 \u7684\u6574\u6570");
+          new import_obsidian8.Notice("\u8BF7\u8F93\u5165 1-10 \u7684\u6574\u6570");
         }
       })
     );
@@ -3442,7 +3993,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
   }
   addOutputSettings(containerEl) {
     containerEl.createEl("h3", { text: "\u{1F4BE} \u8F93\u51FA\u8BBE\u7F6E" });
-    const outputSetting = new import_obsidian7.Setting(containerEl).setName("\u8F93\u51FA\u76EE\u5F55").setDesc("\u8F6C\u6362\u540E\u7684\u6587\u4EF6\u4FDD\u5B58\u4F4D\u7F6E\uFF08\u70B9\u51FB\u9009\u62E9\uFF09");
+    const outputSetting = new import_obsidian8.Setting(containerEl).setName("\u8F93\u51FA\u76EE\u5F55").setDesc("\u8F6C\u6362\u540E\u7684\u6587\u4EF6\u4FDD\u5B58\u4F4D\u7F6E\uFF08\u70B9\u51FB\u9009\u62E9\uFF09");
     outputSetting.addText((text) => {
       text.setPlaceholder("Handwriting Converted");
       text.setValue(this.plugin.settings.outputSettings.outputDir);
@@ -3457,19 +4008,19 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         this.display();
       }));
     });
-    new import_obsidian7.Setting(containerEl).setName("\u4FDD\u7559\u539F\u6587\u4EF6\u540D").setDesc("\u4F7F\u7528\u539F\u59CB PDF \u6587\u4EF6\u540D").addToggle(
+    new import_obsidian8.Setting(containerEl).setName("\u4FDD\u7559\u539F\u6587\u4EF6\u540D").setDesc("\u4F7F\u7528\u539F\u59CB PDF \u6587\u4EF6\u540D").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.outputSettings.keepOriginalName).onChange(async (value) => {
         this.plugin.settings.outputSettings.keepOriginalName = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("\u8F6C\u6362\u540E\u81EA\u52A8\u6253\u5F00").setDesc("\u8F6C\u6362\u5B8C\u6210\u540E\u7ACB\u5373\u6253\u5F00\u6587\u4EF6").addToggle(
+    new import_obsidian8.Setting(containerEl).setName("\u8F6C\u6362\u540E\u81EA\u52A8\u6253\u5F00").setDesc("\u8F6C\u6362\u5B8C\u6210\u540E\u7ACB\u5373\u6253\u5F00\u6587\u4EF6").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.outputSettings.autoOpen).onChange(async (value) => {
         this.plugin.settings.outputSettings.autoOpen = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian7.Setting(containerEl).setName("\u6807\u9898\u4E0B\u65B9\u63D2\u5165\u5185\u5BB9").setDesc("\u5728 Markdown \u6807\u9898\u4E0B\u65B9\u63D2\u5165\u7684\u81EA\u5B9A\u4E49\u5185\u5BB9\uFF08\u652F\u6301 Markdown \u683C\u5F0F\uFF0C\u7559\u7A7A\u5219\u4E0D\u63D2\u5165\uFF09").addTextArea((text) => {
+    new import_obsidian8.Setting(containerEl).setName("\u6807\u9898\u4E0B\u65B9\u63D2\u5165\u5185\u5BB9").setDesc("\u5728 Markdown \u6807\u9898\u4E0B\u65B9\u63D2\u5165\u7684\u81EA\u5B9A\u4E49\u5185\u5BB9\uFF08\u652F\u6301 Markdown \u683C\u5F0F\uFF0C\u7559\u7A7A\u5219\u4E0D\u63D2\u5165\uFF09").addTextArea((text) => {
       text.setPlaceholder("\u4F8B\u5982\uFF1A> \u6765\u81EA PDF \u7684\u8F6C\u6362\u5185\u5BB9\\n\u6216\uFF1A[\u8FD4\u56DE\u76EE\u5F55](#\u76EE\u5F55)").setValue(this.plugin.settings.outputSettings.contentAfterTitle || "").setDisabled(false).onChange(async (value) => {
         this.plugin.settings.outputSettings.contentAfterTitle = value;
         await this.plugin.saveSettings();
@@ -3485,7 +4036,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
   addPromptSettings(containerEl) {
     containerEl.createEl("h3", { text: "\u270D\uFE0F \u8F6C\u6362\u63D0\u793A\u8BCD" });
     const defaultPrompt = "Take the handwritten notes from this image and convert them into a clean, well-structured Markdown file. Pay attention to headings, lists, and any other formatting. Use latex for mathematical equations. For latex use the $$ syntax. Do not skip anything from the original text. Just give me the markdown, do not include other text in the response apart from the markdown file.";
-    new import_obsidian7.Setting(containerEl).setName("\u81EA\u5B9A\u4E49\u63D0\u793A\u8BCD").setDesc("\u544A\u8BC9 AI \u5982\u4F55\u8F6C\u6362\u4F60\u7684\u7B14\u8BB0\uFF08\u7559\u7A7A\u4F7F\u7528\u9ED8\u8BA4\uFF09").addTextArea((text) => {
+    new import_obsidian8.Setting(containerEl).setName("\u81EA\u5B9A\u4E49\u63D0\u793A\u8BCD").setDesc("\u544A\u8BC9 AI \u5982\u4F55\u8F6C\u6362\u4F60\u7684\u7B14\u8BB0\uFF08\u7559\u7A7A\u4F7F\u7528\u9ED8\u8BA4\uFF09").addTextArea((text) => {
       text.setPlaceholder(defaultPrompt).setValue(this.plugin.settings.conversionPrompt || "").setDisabled(false).onChange(async (value) => {
         this.plugin.settings.conversionPrompt = value;
         await this.plugin.saveSettings();
@@ -3507,7 +4058,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
       attr: { style: "cursor: pointer; font-size: 1.1em; font-weight: 600; margin-bottom: 10px;" }
     });
     const contentDiv = detailsEl.createDiv({ attr: { style: "margin-top: 15px;" } });
-    new import_obsidian7.Setting(contentDiv).setName("\u8BF7\u6C42\u8D85\u65F6\uFF08\u79D2\uFF09").setDesc("\u5355\u4E2A\u9875\u9762\u5904\u7406\u7684\u6700\u5927\u7B49\u5F85\u65F6\u95F4").addText(
+    new import_obsidian8.Setting(contentDiv).setName("\u8BF7\u6C42\u8D85\u65F6\uFF08\u79D2\uFF09").setDesc("\u5355\u4E2A\u9875\u9762\u5904\u7406\u7684\u6700\u5927\u7B49\u5F85\u65F6\u95F4").addText(
       (text) => text.setPlaceholder("60").setValue(String(this.plugin.settings.advancedSettings.timeout / 1e3)).onChange(async (value) => {
         const seconds = parseInt(value);
         if (!isNaN(seconds) && seconds > 0) {
@@ -3516,7 +4067,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(contentDiv).setName("\u6700\u5927 Token \u6570").setDesc("AI \u54CD\u5E94\u7684\u6700\u5927\u957F\u5EA6").addText(
+    new import_obsidian8.Setting(contentDiv).setName("\u6700\u5927 Token \u6570").setDesc("AI \u54CD\u5E94\u7684\u6700\u5927\u957F\u5EA6").addText(
       (text) => text.setPlaceholder("4096").setValue(String(this.plugin.settings.maxTokens)).onChange(async (value) => {
         const tokens = parseInt(value);
         if (!isNaN(tokens) && tokens > 0) {
@@ -3525,7 +4076,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(contentDiv).setName("\u5E76\u53D1\u6279\u5904\u7406\u6570\u91CF").setDesc("\u540C\u65F6\u5411 AI \u63D0\u4EA4\u7684\u6279\u6B21\uFF08\u5EFA\u8BAE 1-3\uFF09").addText(
+    new import_obsidian8.Setting(contentDiv).setName("\u5E76\u53D1\u6279\u5904\u7406\u6570\u91CF").setDesc("\u540C\u65F6\u5411 AI \u63D0\u4EA4\u7684\u6279\u6B21\uFF08\u5EFA\u8BAE 1-3\uFF09").addText(
       (text) => text.setPlaceholder("2").setValue(String(this.plugin.settings.advancedSettings?.concurrencyLimit ?? 2)).onChange(async (value) => {
         const n = parseInt(value);
         if (!isNaN(n) && n > 0 && n <= 5) {
@@ -3534,7 +4085,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(contentDiv).setName("\u91CD\u8BD5\u6B21\u6570").setDesc("\u6279\u6B21\u8BF7\u6C42\u5931\u8D25\u540E\u7684\u91CD\u8BD5\u6B21\u6570\uFF08\u5EFA\u8BAE 0-3\uFF09").addText(
+    new import_obsidian8.Setting(contentDiv).setName("\u91CD\u8BD5\u6B21\u6570").setDesc("\u6279\u6B21\u8BF7\u6C42\u5931\u8D25\u540E\u7684\u91CD\u8BD5\u6B21\u6570\uFF08\u5EFA\u8BAE 0-3\uFF09").addText(
       (text) => text.setPlaceholder("2").setValue(String(this.plugin.settings.advancedSettings?.retryAttempts ?? 2)).onChange(async (value) => {
         const n = parseInt(value);
         if (!isNaN(n) && n >= 0 && n <= 5) {
@@ -3543,7 +4094,7 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
         }
       })
     );
-    new import_obsidian7.Setting(contentDiv).setName("\u8F6C\u6362\u65F6\u81EA\u52A8\u6700\u5C0F\u5316\u8FDB\u5EA6\u7A97").setDesc("\u5F00\u59CB\u8F6C\u6362\u540E\u81EA\u52A8\u5C06\u8FDB\u5EA6\u7A97\u53E3\u6700\u5C0F\u5316\u4E3A\u53F3\u4E0B\u89D2\u6D6E\u52A8\u9762\u677F\uFF0C\u907F\u514D\u906E\u6321\u754C\u9762").addToggle(
+    new import_obsidian8.Setting(contentDiv).setName("\u8F6C\u6362\u65F6\u81EA\u52A8\u6700\u5C0F\u5316\u8FDB\u5EA6\u7A97").setDesc("\u5F00\u59CB\u8F6C\u6362\u540E\u81EA\u52A8\u5C06\u8FDB\u5EA6\u7A97\u53E3\u6700\u5C0F\u5316\u4E3A\u53F3\u4E0B\u89D2\u6D6E\u52A8\u9762\u677F\uFF0C\u907F\u514D\u906E\u6321\u754C\u9762").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.advancedSettings?.autoMinimizeProgress ?? false).onChange(async (value) => {
         this.plugin.settings.advancedSettings.autoMinimizeProgress = value;
         await this.plugin.saveSettings();
@@ -3574,10 +4125,10 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     const folders = [];
     const all = this.app.vault.getAllLoadedFiles();
     all.forEach((f) => {
-      if (f instanceof import_obsidian7.TFolder)
+      if (f instanceof import_obsidian8.TFolder)
         folders.push(f);
     });
-    class FolderSuggest extends import_obsidian7.FuzzySuggestModal {
+    class FolderSuggest extends import_obsidian8.FuzzySuggestModal {
       constructor(items, cb, app) {
         super(app);
         this.items = items;
@@ -3605,25 +4156,25 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
   async testConfiguration() {
     const currentModel = this.plugin.settings.currentModel;
     if (!currentModel) {
-      new import_obsidian7.Notice("\u274C \u672A\u9009\u62E9\u6A21\u578B", 3e3);
+      new import_obsidian8.Notice("\u274C \u672A\u9009\u62E9\u6A21\u578B", 3e3);
       return;
     }
     const modelConfig = this.plugin.settings.models[currentModel];
     const provider = this.plugin.settings.providers[modelConfig?.provider];
     if (!provider?.apiKey) {
-      new import_obsidian7.Notice("\u274C \u672A\u914D\u7F6E API Key", 3e3);
+      new import_obsidian8.Notice("\u274C \u672A\u914D\u7F6E API Key", 3e3);
       return;
     }
-    new import_obsidian7.Notice("\u{1F9EA} \u6B63\u5728\u6D4B\u8BD5\u914D\u7F6E...", 1500);
+    new import_obsidian8.Notice("\u{1F9EA} \u6B63\u5728\u6D4B\u8BD5\u914D\u7F6E...", 1500);
     try {
       const result = await this.plugin.aiService.testConnection();
       if (result.success) {
-        new import_obsidian7.Notice("\u2705 API\u8FDE\u63A5\u6210\u529F", 3e3);
+        new import_obsidian8.Notice("\u2705 API\u8FDE\u63A5\u6210\u529F", 3e3);
       } else {
-        new import_obsidian7.Notice("\u274C \u8FDE\u63A5\u5931\u8D25: " + result.message, 4e3);
+        new import_obsidian8.Notice("\u274C \u8FDE\u63A5\u5931\u8D25: " + result.message, 4e3);
       }
     } catch (e) {
-      new import_obsidian7.Notice("\u274C \u6D4B\u8BD5\u5F02\u5E38: " + (e?.message || String(e)), 4e3);
+      new import_obsidian8.Notice("\u274C \u6D4B\u8BD5\u5F02\u5E38: " + (e?.message || String(e)), 4e3);
     }
   }
   async resetSettings() {
@@ -3634,12 +4185,12 @@ var SimpleSettingsTab = class extends import_obsidian7.PluginSettingTab {
     this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS2));
     await this.plugin.saveSettings();
     this.display();
-    new import_obsidian7.Notice("\u2705 \u8BBE\u7F6E\u5DF2\u91CD\u7F6E", 3e3);
+    new import_obsidian8.Notice("\u2705 \u8BBE\u7F6E\u5DF2\u91CD\u7F6E", 3e3);
   }
 };
 
 // src/main.ts
-var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
+var HandMarkdownAIPlugin = class extends import_obsidian10.Plugin {
   settings;
   conversionService;
   aiService;
@@ -3709,7 +4260,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
     }
     if (hasChanges) {
       await this.saveSettings();
-      new import_obsidian9.Notice("\u5DF2\u81EA\u52A8\u5C06\u68C0\u6D4B\u5230\u7684\u660E\u6587 API Key \u8FC1\u79FB\u81F3 Keychain \u5B89\u5168\u5B58\u50A8");
+      new import_obsidian10.Notice("\u5DF2\u81EA\u52A8\u5C06\u68C0\u6D4B\u5230\u7684\u660E\u6587 API Key \u8FC1\u79FB\u81F3 Keychain \u5B89\u5168\u5B58\u50A8");
     }
   }
   /**
@@ -3735,21 +4286,21 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
   }
   async smartConvert(target) {
     if (!this.conversionService.validateConfig()) {
-      new import_obsidian9.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+      new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
       this.openSettings();
       return;
     }
-    if (target instanceof import_obsidian9.TFolder) {
-      await this.convertFolder(target.path);
+    if (target instanceof import_obsidian10.TFolder) {
+      this.openConfirmModalForSelection({ mode: "folder", folderPath: target.path });
       return;
     }
-    if (target instanceof import_obsidian9.TFile) {
+    if (target instanceof import_obsidian10.TFile) {
       if (ConversionService.isFileSupported(target.path)) {
         await this.smartConvertFile(target);
         return;
       }
     }
-    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
     if (activeView?.editor && activeView.file) {
       const editor = activeView.editor;
       let cursor;
@@ -3763,7 +4314,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         const linkInfo = this.extractImageAtCursor(line, cursor.ch);
         if (linkInfo) {
           const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, activeView.file.path);
-          if (targetFile instanceof import_obsidian9.TFile && ConversionService.isFileSupported(targetFile.path)) {
+          if (targetFile instanceof import_obsidian10.TFile && ConversionService.isFileSupported(targetFile.path)) {
             await this.convertLinkInEditor(linkInfo, editor, activeView, cursor.line);
             return;
           }
@@ -3772,13 +4323,13 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
     }
     const activeFile = this.app.workspace.getActiveFile();
     if (activeFile && ConversionService.isFileSupported(activeFile.path)) {
-      await this.convertFile(activeFile.path);
+      this.openConfirmModalForSelection({ mode: "file", filePath: activeFile.path });
       return;
     }
     this.showConversionModal();
   }
   async smartConvertFile(file) {
-    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView);
+    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
     if (activeView?.editor && activeView.file) {
       const editor = activeView.editor;
       let cursor;
@@ -3799,7 +4350,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         }
       }
     }
-    await this.convertFile(file.path);
+    this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
   }
   /**
    * 注册右键菜单
@@ -3807,14 +4358,14 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
   registerContextMenu() {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        if (file instanceof import_obsidian9.TFile && ConversionService.isFileSupported(file.path)) {
+        if (file instanceof import_obsidian10.TFile && ConversionService.isFileSupported(file.path)) {
           menu.addItem((item) => {
             item.setTitle("\u8F6C\u6362\u4E3AMarkdown").setIcon("wand").onClick(async () => {
               await this.smartConvert(file);
             });
           });
         }
-        if (file instanceof import_obsidian9.TFile) {
+        if (file instanceof import_obsidian10.TFile) {
           const ext = file.extension?.toLowerCase?.() || "";
           const outExt = this.settings.outputSettings.outputExtension.toLowerCase();
           const outDir = (this.settings.outputSettings.outputDir || "").replace(/^\/+/, "");
@@ -3838,7 +4389,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
             });
           }
         }
-        if (file instanceof import_obsidian9.TFolder) {
+        if (file instanceof import_obsidian10.TFolder) {
           menu.addItem((item) => {
             item.setTitle("\u8F6C\u6362\u6B64\u6587\u4EF6\u5939\u5185\u6240\u6709\u6587\u4EF6").setIcon("folder").onClick(() => {
               this.smartConvert(file);
@@ -3851,7 +4402,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
   registerEditorLinkContextMenu() {
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor, view) => {
-        if (!(view instanceof import_obsidian9.MarkdownView))
+        if (!(view instanceof import_obsidian10.MarkdownView))
           return;
         if (!editor || !view?.file)
           return;
@@ -3870,7 +4421,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         if (!linkInfo)
           return;
         const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, view.file.path);
-        if (!(targetFile instanceof import_obsidian9.TFile))
+        if (!(targetFile instanceof import_obsidian10.TFile))
           return;
         if (!ConversionService.isFileSupported(targetFile.path))
           return;
@@ -3906,9 +4457,9 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         vaultPath = parts.join("/");
       }
       const file = this.app.vault.getAbstractFileByPath(vaultPath);
-      if (file instanceof import_obsidian9.TFile && ConversionService.isFileSupported(file.path)) {
+      if (file instanceof import_obsidian10.TFile && ConversionService.isFileSupported(file.path)) {
         evt.preventDefault();
-        const menu = new import_obsidian9.Menu();
+        const menu = new import_obsidian10.Menu();
         menu.addItem((item) => {
           item.setTitle("\u8F6C\u6362\u4E3AMarkdown").setIcon("wand").onClick(async () => {
             await this.smartConvert(file);
@@ -3986,15 +4537,15 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
   async convertLinkInEditor(linkInfo, editor, view, lineNum) {
     try {
       if (!this.conversionService.validateConfig()) {
-        new import_obsidian9.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+        new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
         this.openSettings();
         return;
       }
-      new import_obsidian9.Notice("\u6B63\u5728\u8F6C\u6362\u6587\u4EF6...", 2e3);
+      new import_obsidian10.Notice("\u6B63\u5728\u8F6C\u6362\u6587\u4EF6...", 2e3);
       const currentFile = view.file;
       const targetFile = this.app.metadataCache.getFirstLinkpathDest(linkInfo.path, currentFile?.path || "");
-      if (!(targetFile instanceof import_obsidian9.TFile)) {
-        new import_obsidian9.Notice(`\u627E\u4E0D\u5230\u6587\u4EF6: ${linkInfo.path}
+      if (!(targetFile instanceof import_obsidian10.TFile)) {
+        new import_obsidian10.Notice(`\u627E\u4E0D\u5230\u6587\u4EF6: ${linkInfo.path}
 \u5F53\u524D\u6587\u4EF6: ${currentFile?.path || "\u672A\u77E5"}`, 5e3);
         console.error("\u6587\u4EF6\u8DEF\u5F84\u89E3\u6790\u5931\u8D25:", {
           linkPath: linkInfo.path,
@@ -4004,7 +4555,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
         return;
       }
       if (!ConversionService.isFileSupported(targetFile.path)) {
-        new import_obsidian9.Notice(`\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u683C\u5F0F: ${targetFile.extension}`, 5e3);
+        new import_obsidian10.Notice(`\u4E0D\u652F\u6301\u7684\u6587\u4EF6\u683C\u5F0F: ${targetFile.extension}`, 5e3);
         return;
       }
       const { FileProcessor: FileProcessor2 } = await Promise.resolve().then(() => (init_file_processor(), file_processor_exports));
@@ -4013,11 +4564,11 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
       if (targetFile.path.endsWith(".excalidraw") || targetFile.path.endsWith(".excalidraw.md")) {
         const pngPath = targetFile.path.replace(/\.excalidraw(\.md)?$/, ".excalidraw.png");
         const pngFile = this.app.vault.getAbstractFileByPath(pngPath);
-        if (pngFile instanceof import_obsidian9.TFile) {
+        if (pngFile instanceof import_obsidian10.TFile) {
           actualFilePath = pngPath;
           fileData = await FileProcessor2.processFile(pngPath, this.app);
         } else {
-          new import_obsidian9.Notice(`\u274C \u627E\u4E0D\u5230\u5BF9\u5E94\u7684 PNG \u6587\u4EF6
+          new import_obsidian10.Notice(`\u274C \u627E\u4E0D\u5230\u5BF9\u5E94\u7684 PNG \u6587\u4EF6
 
 \u671F\u671B\u4F4D\u7F6E: ${pngPath}
 
@@ -4035,13 +4586,13 @@ var HandMarkdownAIPlugin = class extends import_obsidian9.Plugin {
 ${result.markdown}
 `;
         editor.replaceRange(insertText, { line: insertLine, ch: 0 });
-        new import_obsidian9.Notice("\u8F6C\u6362\u6210\u529F\uFF01", 3e3);
+        new import_obsidian10.Notice("\u8F6C\u6362\u6210\u529F\uFF01", 3e3);
       } else {
-        new import_obsidian9.Notice(`\u8F6C\u6362\u5931\u8D25: ${result.error || "\u672A\u77E5\u9519\u8BEF"}`, 5e3);
+        new import_obsidian10.Notice(`\u8F6C\u6362\u5931\u8D25: ${result.error || "\u672A\u77E5\u9519\u8BEF"}`, 5e3);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      new import_obsidian9.Notice(`\u8F6C\u6362\u5931\u8D25: ${errorMessage}`, 5e3);
+      new import_obsidian10.Notice(`\u8F6C\u6362\u5931\u8D25: ${errorMessage}`, 5e3);
       console.error("\u8F6C\u6362\u6587\u4EF6\u5931\u8D25:", error);
     }
   }
@@ -4064,10 +4615,10 @@ ${result.markdown}
     const folders = [];
     const all = this.app.vault.getAllLoadedFiles();
     all.forEach((f) => {
-      if (f instanceof import_obsidian9.TFolder)
+      if (f instanceof import_obsidian10.TFolder)
         folders.push(f);
     });
-    new class FolderSuggest extends import_obsidian9.FuzzySuggestModal {
+    new class FolderSuggest extends import_obsidian10.FuzzySuggestModal {
       constructor(plugin, items) {
         super(plugin.app);
         this.plugin = plugin;
@@ -4090,46 +4641,28 @@ ${result.markdown}
    */
   async convertFolder(folderPath) {
     if (!this.conversionService.validateConfig()) {
-      new import_obsidian9.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+      new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
       this.openSettings();
       return;
     }
-    const files = [];
-    const root = this.app.vault.getAbstractFileByPath(folderPath);
-    const walk = (node) => {
-      if (!node)
-        return;
-      if (node instanceof import_obsidian9.TFile) {
-        if (ConversionService.isFileSupported(node.path))
-          files.push(node.path);
-      } else if (node instanceof import_obsidian9.TFolder) {
-        node.children.forEach((ch) => walk(ch));
-      }
-    };
-    walk(root);
-    if (files.length === 0) {
-      new import_obsidian9.Notice("\u8BE5\u6587\u4EF6\u5939\u5185\u6CA1\u6709\u53EF\u8F6C\u6362\u7684\u6587\u4EF6", 3e3);
-      return;
-    }
-    new import_obsidian9.Notice(`\u5F00\u59CB\u6279\u91CF\u8F6C\u6362\uFF0C\u5171 ${files.length} \u4E2A\u6587\u4EF6...`, 3e3);
-    await this.convertFiles(files);
+    this.openConfirmModalForSelection({ mode: "folder", folderPath });
   }
   /**
    * 转换文件
    * 
    * @param filePath 文件路径
    */
-  async convertFile(filePath) {
+  async convertFile(filePath, options) {
     if (!this.conversionService.validateConfig()) {
-      new import_obsidian9.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+      new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
       this.openSettings();
       return;
     }
-    const result = await this.conversionService.convertFile(filePath);
+    const result = await this.conversionService.convertFile(filePath, options);
     if (result.success) {
-      new import_obsidian9.Notice(`\u8F6C\u6362\u6210\u529F\uFF01\u6587\u4EF6\u5DF2\u4FDD\u5B58\u5230: ${result.outputPath}`, 5e3);
+      new import_obsidian10.Notice(`\u8F6C\u6362\u6210\u529F\uFF01\u6587\u4EF6\u5DF2\u4FDD\u5B58\u5230: ${result.outputPath}`, 5e3);
     } else {
-      new import_obsidian9.Notice(`\u8F6C\u6362\u5931\u8D25: ${result.error}`, 5e3);
+      new import_obsidian10.Notice(`\u8F6C\u6362\u5931\u8D25: ${result.error}`, 5e3);
     }
   }
   /**
@@ -4137,9 +4670,9 @@ ${result.markdown}
    * 
    * @param filePaths 文件路径数组
    */
-  async convertFiles(filePaths) {
+  async convertFiles(filePaths, options) {
     if (!this.conversionService.validateConfig()) {
-      new import_obsidian9.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+      new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
       this.openSettings();
       return;
     }
@@ -4147,7 +4680,7 @@ ${result.markdown}
       (path) => ConversionService.isFileSupported(path)
     );
     if (supportedFiles.length === 0) {
-      new import_obsidian9.Notice("\u6CA1\u6709\u652F\u6301\u7684\u6587\u4EF6", 3e3);
+      new import_obsidian10.Notice("\u6CA1\u6709\u652F\u6301\u7684\u6587\u4EF6", 3e3);
       return;
     }
     const { BatchProgressModal: BatchProgressModal2 } = await Promise.resolve().then(() => (init_batch_progress_modal(), batch_progress_modal_exports));
@@ -4157,14 +4690,54 @@ ${result.markdown}
     const results = await this.conversionService.convertFiles(supportedFiles, ({ current, total, message }) => {
       batch.updateProgress(current);
       batch.setStatus(`${message} (${current}/${total})`);
-    });
+    }, options);
     batch.close();
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.length - successCount;
-    new import_obsidian9.Notice(
+    new import_obsidian10.Notice(
       `\u6279\u91CF\u8F6C\u6362\u5B8C\u6210\uFF01\u6210\u529F: ${successCount}, \u5931\u8D25: ${failCount}`,
       5e3
     );
+  }
+  async convertFilesMerged(filePaths) {
+    if (!this.conversionService.validateConfig()) {
+      new import_obsidian10.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
+      this.openSettings();
+      return;
+    }
+    const result = await this.conversionService.convertFilesMerged(filePaths);
+    if (result.success) {
+      new import_obsidian10.Notice(`\u5408\u5E76\u8F6C\u6362\u6210\u529F\uFF01\u6587\u4EF6\u5DF2\u4FDD\u5B58\u5230: ${result.outputPath}`, 5e3);
+    } else if (result.error) {
+      new import_obsidian10.Notice(`\u5408\u5E76\u8F6C\u6362\u5931\u8D25: ${result.error}`, 5e3);
+    }
+  }
+  async confirmAndConvertSelection(filePaths, merge) {
+    this.openConfirmModalForSelection({
+      mode: merge ? "merge" : "files",
+      filePaths
+    });
+  }
+  openConfirmModalForSelection(options) {
+    const modal = new ConfirmConversionModal(this.app, {
+      mode: options.mode,
+      filePath: options.filePath,
+      filePaths: options.filePaths,
+      folderPath: options.folderPath,
+      settings: this.settings,
+      onConfirm: async ({ filePaths, pdfPages }) => {
+        if (options.mode === "merge") {
+          await this.convertFilesMerged(filePaths);
+          return;
+        }
+        if (options.mode === "file") {
+          await this.convertFile(filePaths[0], { pdfPages });
+          return;
+        }
+        await this.convertFiles(filePaths, { pdfPages });
+      }
+    });
+    modal.open();
   }
   /**
    * 打开设置
@@ -4175,13 +4748,13 @@ ${result.markdown}
       anyApp?.setting?.open?.();
       anyApp?.setting?.openTabById?.(this.manifest.id);
     } catch {
-      new import_obsidian9.Notice("\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u627E\u5230 Hand Markdown AI \u63D2\u4EF6\u8FDB\u884C\u914D\u7F6E", 5e3);
+      new import_obsidian10.Notice("\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u627E\u5230 Hand Markdown AI \u63D2\u4EF6\u8FDB\u884C\u914D\u7F6E", 5e3);
     }
   }
   toggleModel() {
     const enabledModels = Object.entries(this.settings.models).filter(([_, config]) => config.enabled).map(([id, _]) => id);
     if (enabledModels.length === 0) {
-      new import_obsidian9.Notice("\u6CA1\u6709\u542F\u7528\u7684\u6A21\u578B\uFF0C\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E", 5e3);
+      new import_obsidian10.Notice("\u6CA1\u6709\u542F\u7528\u7684\u6A21\u578B\uFF0C\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E", 5e3);
       return;
     }
     const currentIndex = enabledModels.indexOf(this.settings.currentModel);
@@ -4190,6 +4763,6 @@ ${result.markdown}
     this.settings.currentModel = nextModel;
     this.saveSettings();
     const modelName = this.settings.models[nextModel]?.name || nextModel;
-    new import_obsidian9.Notice(`\u5DF2\u5207\u6362\u5230\u6A21\u578B: ${modelName}`, 3e3);
+    new import_obsidian10.Notice(`\u5DF2\u5207\u6362\u5230\u6A21\u578B: ${modelName}`, 3e3);
   }
 };

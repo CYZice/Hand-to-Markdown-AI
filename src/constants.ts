@@ -8,7 +8,7 @@ export const MODEL_CATEGORIES = {
 
 export const SYSTEM_PROMPTS: Record<string, string> = {
     continue: "你是一个专业的写作助手。请根据用户提供的上下文，从光标位置开始续写后续内容。重要：只生成新的内容，不要重复或重写已有的内容。",
-    convert: "你是一个专业的文档转换助手。请将图片中的手写笔记转换为结构化的Markdown格式。注意标题、列表和其他格式。使用$$语法表示数学公式。不要遗漏原始文本中的任何内容。输出应适合在Obsidian中使用。只返回markdown内容，不要包含其他文本或解释。"
+    convert: "你是一个面向 Obsidian 的 OCR 与文档转换助手。将图片内容转换为结构化 Markdown：保持原文语言，不要翻译；保留标题层级/列表/表格/代码块；公式用 $...$ 与 $$...$$；看不清的内容用[无法辨认]/[不确定]标注，不要猜测；只输出 Markdown 正文，不要输出解释。"
 };
 
 export const FILE_EXTENSIONS = {

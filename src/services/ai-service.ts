@@ -635,8 +635,29 @@ export class AIService {
                 { role: "system", content: conversionPrompt }
             ];
 
+            const pageFromName = (() => {
+                if (fileData?.name) {
+                    const m = fileData.name.match(/page\s*(\d+)/i);
+                    if (m?.[1]) return Number(m[1]);
+                }
+                if (fileData?.path) {
+                    const m = fileData.path.match(/#page(\d+)/i);
+                    if (m?.[1]) return Number(m[1]);
+                }
+                return null;
+            })();
+
+            const fileHint = fileData?.name ? `文件：${fileData.name}` : "";
+            const pageHint = pageFromName ? `页码：${pageFromName}` : "";
+            const hintLine = [fileHint, pageHint].filter(Boolean).join("，");
+
             const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
-                { type: "text", text: "请将图片中的手写笔记转换为结构化的Markdown格式。" }
+                {
+                    type: "text",
+                    text: hintLine
+                        ? `请将下图转换为结构化 Markdown。${hintLine}`
+                        : "请将下图转换为结构化 Markdown。",
+                },
             ];
 
             content.push({
@@ -746,7 +767,8 @@ export class AIService {
      */
     async convertImageBatch(
         files: FileData[],
-        prompt?: string
+        prompt?: string,
+        pageNumbers?: number[]
     ): Promise<ConversionResult> {
         const startTime = Date.now();
 
@@ -776,8 +798,26 @@ export class AIService {
                 { role: "system", content: conversionPrompt }
             ];
 
+            const normalizedPages = Array.isArray(pageNumbers)
+                ? pageNumbers.map(n => Math.floor(n)).filter(n => n > 0)
+                : [];
+            const hasAlignedPages = normalizedPages.length === files.length && files.length > 0;
+
+            const fileNames = files.map(f => f?.name).filter(Boolean).join("、");
+            const pagesHint = hasAlignedPages ? `页码顺序：${normalizedPages.join(", ")}` : "";
+            const nameHint = fileNames ? `图片文件：${fileNames}` : "";
+            const hints = [nameHint, pagesHint].filter(Boolean).join("\n");
+
             const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
-                { type: "text", text: "请将以下图片（可能是连续页）中的手写笔记合并转换为结构化的Markdown。" }
+                {
+                    type: "text",
+                    text:
+                        "请将以下图片转换为结构化 Markdown。\n" +
+                        (hints ? `${hints}\n` : "") +
+                        (hasAlignedPages
+                            ? "要求：按输入顺序输出，每页用二级标题分隔：## Page {页码}。"
+                            : "要求：按输入顺序输出，如有多页内容请用二级标题分隔：## Page 1 / ## Page 2 ..."),
+                },
             ];
 
             files.forEach(file => {

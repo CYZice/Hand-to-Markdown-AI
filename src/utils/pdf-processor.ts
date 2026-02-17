@@ -54,6 +54,7 @@ export class PDFProcessor {
             format?: 'jpeg' | 'webp'; // 图片格式，默认 jpeg
             timeoutPerPage?: number;  // 单页超时时间 (ms)，默认 20000
             onCancel?: () => boolean; // 取消检查回调
+            pageNumbers?: number[];
         } = {}
     ): Promise<number> {
         this.initWorker();
@@ -71,11 +72,18 @@ export class PDFProcessor {
             const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
             const pdf = await loadingTask.promise;
             const totalPages = pdf.numPages;
+            const normalizedPages = options.pageNumbers && options.pageNumbers.length > 0
+                ? Array.from(new Set(options.pageNumbers.map(n => Math.floor(n)).filter(n => n > 0 && n <= totalPages))).sort((a, b) => a - b)
+                : [];
+            const pagesToRender = normalizedPages.length > 0
+                ? normalizedPages
+                : Array.from({ length: totalPages }, (_, i) => i + 1);
 
-            new Notice(`开始处理 PDF，共 ${totalPages} 页`, 2000);
+            new Notice(`开始处理 PDF，共 ${pagesToRender.length} 页`, 2000);
 
             // 2. 逐页处理
-            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            for (let i = 0; i < pagesToRender.length; i++) {
+                const pageNum = pagesToRender[i];
                 // 检查用户是否取消
                 if (onCancel?.()) {
                     new Notice('转换已取消', 2000);
@@ -107,7 +115,9 @@ export class PDFProcessor {
 
                     // 2d. 报告进度
                     if (onProgress) {
-                        onProgress(pageNum, totalPages, `已处理第 ${pageNum}/${totalPages} 页`);
+                        const done = i + 1;
+                        const total = pagesToRender.length;
+                        onProgress(done, total, `已处理第 ${done}/${total} 页`);
                     }
 
                 } catch (pageError) {
@@ -118,7 +128,7 @@ export class PDFProcessor {
                 }
             }
 
-            return totalPages;
+            return pagesToRender.length;
 
         } catch (error) {
             const errMsg = error instanceof Error ? error.message : String(error);

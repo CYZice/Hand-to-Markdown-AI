@@ -11,6 +11,7 @@ export class ConversionModal extends Modal {
     private selectedFiles: TFile[] = [];
     private fileCheckboxes: Map<string, HTMLInputElement> = new Map();
     private folderCheckboxes: Map<string, HTMLInputElement> = new Map();
+    private mergeSelected = false;
 
     constructor(app: App, plugin: HandMarkdownAIPlugin) {
         super(app);
@@ -94,6 +95,14 @@ export class ConversionModal extends Modal {
         statsEl.addClass("file-stats");
         statsEl.textContent = `已选择 ${this.selectedFiles.length} / ${supportedFiles.length} 个文件`;
 
+        const mergeContainer = contentEl.createDiv();
+        mergeContainer.addClass("merge-option-container");
+        const mergeCheckbox = mergeContainer.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+        const mergeLabel = mergeContainer.createEl("label", { text: "合并为单个Markdown（仅图片）" });
+        mergeCheckbox.addEventListener("change", () => {
+            this.mergeSelected = mergeCheckbox.checked;
+        });
+
         // 按钮容器
         const buttonContainer = contentEl.createDiv();
         buttonContainer.addClass("modal-button-container");
@@ -122,7 +131,7 @@ export class ConversionModal extends Modal {
 
             // 执行转换
             const filePaths = this.selectedFiles.map(file => file.path);
-            await this.plugin.convertFiles(filePaths);
+            await this.plugin.confirmAndConvertSelection(filePaths, this.mergeSelected);
         };
     }
 

@@ -91,10 +91,19 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     }
 };
 
-/**
- * 默认转换提示词（来自noted.md）
- */
-export const DEFAULT_CONVERSION_PROMPT = `Take the handwritten notes from this image and convert them into a clean, well-structured Markdown file. Pay attention to headings, lists, and any other formatting. Resemble the hierarchy. Use latex for mathematical equations. For latex use the $$ syntax instead of \`\`\`latex. Do not skip anything from the original text. The output should be suitable for use in Obsidian. Just give me the markdown, do not include other text in the response apart from the markdown file. No explanation on how the changes were made is needed`;
+export const DEFAULT_CONVERSION_PROMPT = `你是一个面向 Obsidian 的 OCR 与笔记结构化助手。
+
+任务：把输入图片中的内容转换成干净、结构化的 Markdown。
+
+规则：
+- 保持原文语言，不要翻译。
+- 尽量保留原有结构：标题层级、段落、列表、表格、代码块、引用、强调等。
+- 数学公式：行内用 $...$，独立公式用 $$...$$。
+- 不要臆测或补全看不清的内容：遇到无法辨认的字/词/行，用 [无法辨认] 或 [不确定] 标注，并保留周围可读内容。
+- 图表/流程图/示意图：优先转写可读的标签与文字；只有在信息明确时才做解释。如果信息不足，添加一个小节说明“图示信息不足”，并列出你能确定的要点（不要编造）。
+- 如果一次输入包含多张图片（例如 PDF 连续页），按输入顺序输出，并用二级标题分隔每一页：## Page 1 / ## Page 2 ...（如果用户提供了页码则使用对应页码）。
+
+只输出 Markdown 正文，不要输出任何额外说明。`;
 
 /**
  * 支持的文件类型和对应的MIME类型

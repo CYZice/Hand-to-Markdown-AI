@@ -26,7 +26,7 @@ export class ConversionService {
         return this.settings.conversionPrompt || DEFAULT_CONVERSION_PROMPT;
     }
 
-    async convertFile(filePath: string): Promise<ConversionResult> {
+    async convertFile(filePath: string, options?: { pdfPages?: number[] }): Promise<ConversionResult> {
         const startTime = Date.now();
 
         let progressModal: ProgressModal | null = null;
@@ -37,7 +37,7 @@ export class ConversionService {
             // 判断是否为 PDF
             if (mimeType === "application/pdf") {
                 // PDF 流式处理（新增）
-                return await this.convertPdfStream(filePath, startTime);
+                return await this.convertPdfStream(filePath, startTime, options?.pdfPages);
             } else {
                 // 单张图片处理（保留原有逻辑）
                 return await this.convertSingleImage(filePath, startTime);
@@ -108,7 +108,7 @@ export class ConversionService {
      * PDF 流式处理（新增）
      * 逐页转换，实时写入文件
      */
-    private async convertPdfStream(filePath: string, startTime: number): Promise<ConversionResult> {
+    private async convertPdfStream(filePath: string, startTime: number, pdfPages?: number[]): Promise<ConversionResult> {
         let totalPages = 0;
         let successPages = 0;
         let failedPages: number[] = [];
@@ -134,9 +134,22 @@ export class ConversionService {
             // 2. 获取 PDF 信息
             const bufferForInfo = arrayBuffer.slice(0);
             const pdfInfo = await PDFProcessor.getPdfInfo(bufferForInfo);
-            totalPages = pdfInfo.numPages;
+            const pdfTotalPages = pdfInfo.numPages;
+            const normalizedPages = pdfPages && pdfPages.length > 0
+                ? Array.from(new Set(pdfPages.map(n => Math.floor(n)).filter(n => n > 0 && n <= pdfTotalPages))).sort((a, b) => a - b)
+                : [];
+            if (pdfPages && pdfPages.length > 0 && normalizedPages.length === 0) {
+                throw new Error("页码范围无效");
+            }
+            const pagesToProcess = normalizedPages.length > 0
+                ? normalizedPages
+                : Array.from({ length: pdfTotalPages }, (_, i) => i + 1);
+            totalPages = pagesToProcess.length;
 
-            new Notice(`开始处理 PDF，共 ${totalPages} 页`, 3000);
+            const noticeText = totalPages !== pdfTotalPages
+                ? `开始处理 PDF，共 ${totalPages} 页（从 ${pdfTotalPages} 页中选择）`
+                : `开始处理 PDF，共 ${totalPages} 页`;
+            new Notice(noticeText, 3000);
 
             const batchSize = this.settings.advancedSettings?.imagesPerRequest || 1;
             const expectedTotalJobs = Math.max(1, Math.ceil(totalPages / batchSize));
@@ -176,9 +189,10 @@ export class ConversionService {
 
             // 5. 流式处理每一页（支持批量提交图片）
             let batchImages: FileData[] = [];
+            let batchPages: number[] = [];
 
             // 批次并发池
-            type BatchJob = { id: number; images: FileData[]; startPage: number; endPage: number };
+            type BatchJob = { id: number; images: FileData[]; pages: number[] };
             let jobCounter = 0;
             let totalJobs = 0;
             const jobQueue: BatchJob[] = [];
@@ -186,15 +200,20 @@ export class ConversionService {
             const jobResults = new Map<number, { result: import("./types").ConversionResult; job: BatchJob }>();
             let nextWriteId = 1;
             let writing = false;
+            let renderedCount = 0;
 
             const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-            const retryConvertImageBatch = async (files: FileData[], prompt: string): Promise<import("./types").ConversionResult> => {
+            const retryConvertImageBatch = async (
+                files: FileData[],
+                prompt: string,
+                pageNumbers?: number[],
+            ): Promise<import("./types").ConversionResult> => {
                 let attempt = 0;
                 let lastErr: any = null;
                 while (attempt <= RETRY_ATTEMPTS) {
                     try {
-                        const res = await this.aiService.convertImageBatch(files, prompt);
+                        const res = await this.aiService.convertImageBatch(files, prompt, pageNumbers);
                         return res;
                     } catch (err: any) {
                         lastErr = err;
@@ -237,12 +256,11 @@ export class ConversionService {
                             successPages += job.images.length;
                         } else {
                             // 失败页：将该批次的页号记录为失败
-                            const failed = Array.from({ length: job.endPage - job.startPage + 1 }, (_, i) => job.startPage + i);
-                            failedPages.push(...failed);
+                            failedPages.push(...job.pages);
                         }
 
                         progressModal!.updateAIProgress(nextWriteId);
-                        const processedPages = job.endPage; // 当前批次结束页即为已处理的页数
+                        const processedPages = Math.min(totalPages, successPages + failedPages.length);
                         progressModal!.setStatus(`已完成批次 ${nextWriteId}/${expectedTotalJobs}，已处理 ${processedPages}/${totalPages} 页（成功 ${successPages} 页）`);
 
                         const finalNewContent = currentContent + appendContent;
@@ -262,7 +280,7 @@ export class ConversionService {
                     activeJobs++;
                     (async () => {
                         try {
-                            const res = await retryConvertImageBatch(job.images, prompt);
+                            const res = await retryConvertImageBatch(job.images, prompt, job.pages);
                             jobResults.set(job.id, { result: res, job });
                             await tryFlushWrites();
                         } catch (e) {
@@ -290,6 +308,8 @@ export class ConversionService {
             await PDFProcessor.streamConvertPdfToImages(
                 arrayBuffer,
                 async (base64: string, pageNum: number) => {
+                    let errMsg: string | null = null;
+                    let submittedBatch = false;
                     try {
                         // 为每一页创建临时 FileData
                         const pageFileData: FileData = {
@@ -302,30 +322,28 @@ export class ConversionService {
                         };
                         // 收集到批量数组
                         batchImages.push(pageFileData);
-
-                        // 更新渲染进度
-                        progressModal!.updateRenderProgress(pageNum);
-                        progressModal!.setStatus(`已渲染第 ${pageNum}/${totalPages} 页，等待提交AI...`);
+                        batchPages.push(pageNum);
 
                         // 达到批量大小或最后一页时，执行一次AI转换
-                        if (batchImages.length >= batchSize || pageNum === totalPages) {
+                        if (batchImages.length >= batchSize || renderedCount + 1 === totalPages) {
                             jobCounter++;
                             const job: BatchJob = {
                                 id: jobCounter,
                                 images: batchImages.slice(),
-                                startPage: pageNum - batchImages.length + 1,
-                                endPage: pageNum
+                                pages: batchPages.slice()
                             };
                             jobQueue.push(job);
                             totalJobs++;
-                            progressModal!.setStatus(`已提交批次 ${totalJobs}/${expectedTotalJobs}（第 ${job.startPage}-${job.endPage} 页），正在并发处理...`);
+                            progressModal!.setStatus(`已提交批次 ${totalJobs}/${expectedTotalJobs}（${job.images.length} 页），正在并发处理...`);
                             batchImages = [];
+                            batchPages = [];
                             runNextJob();
+                            submittedBatch = true;
                         }
 
                     } catch (pageError) {
                         failedPages.push(pageNum);
-                        const errMsg = pageError instanceof Error ? pageError.message : String(pageError);
+                        errMsg = pageError instanceof Error ? pageError.message : String(pageError);
                         console.error(`第 ${pageNum} 页转换失败:`, errMsg);
                         // 写入错误信息（即时，包含页号，便于后续重试识别）
                         const currentContent = await this.app.vault.read(outputFile!);
@@ -336,10 +354,14 @@ export class ConversionService {
                         const finalNewContent = currentContent + errorBlock;
 
                         await this.app.vault.modify(outputFile!, finalNewContent);
-
-                        // 更新渲染进度（包括失败的页面）
-                        progressModal!.updateRenderProgress(pageNum);
-                        progressModal!.setStatus(`第 ${pageNum} 页渲染失败：${errMsg}`);
+                    } finally {
+                        renderedCount++;
+                        progressModal!.updateRenderProgress(renderedCount);
+                        if (errMsg) {
+                            progressModal!.setStatus(`第 ${pageNum} 页渲染失败：${errMsg}`);
+                        } else if (!submittedBatch) {
+                            progressModal!.setStatus(`已渲染第 ${renderedCount}/${totalPages} 页，等待提交AI...`);
+                        }
                     }
                 },
                 (current: number, total: number, message: string) => {
@@ -351,7 +373,8 @@ export class ConversionService {
                     quality: this.settings.advancedSettings?.pdfQuality || 0.8,
                     format: 'jpeg',
                     timeoutPerPage: this.settings.advancedSettings?.timeout || 30000,
-                    onCancel: () => progressModal?.isCancelled() === true
+                    onCancel: () => progressModal?.isCancelled() === true,
+                    pageNumbers: pagesToProcess
                 }
             );
 
@@ -535,7 +558,7 @@ export class ConversionService {
                     isPdf: true
                 };
 
-                const res = await this.aiService.convertImageBatch([pageFileData], prompt);
+                const res = await this.aiService.convertImageBatch([pageFileData], prompt, [pageNum]);
                 const of = this.app.vault.getAbstractFileByPath(outputPath) as TFile;
                 const current = await this.app.vault.read(of);
 
@@ -597,7 +620,7 @@ export class ConversionService {
                 isPdf: true
             };
 
-            const res = await this.aiService.convertImageBatch([pageFileData], prompt);
+            const res = await this.aiService.convertImageBatch([pageFileData], prompt, [pageNum]);
             const of = this.app.vault.getAbstractFileByPath(outputPath) as TFile;
             const current = await this.app.vault.read(of);
 
@@ -644,7 +667,8 @@ export class ConversionService {
 
     async convertFiles(
         filePaths: string[],
-        onProgress?: ProgressCallback
+        onProgress?: ProgressCallback,
+        options?: { pdfPages?: number[] }
     ): Promise<ConversionResult[]> {
         const results: ConversionResult[] = [];
         const total = filePaths.length;
@@ -661,7 +685,8 @@ export class ConversionService {
                     });
                 }
 
-                const result = await this.convertFile(filePath);
+                const isPdf = FileProcessor.getFileMimeType(filePath) === "application/pdf";
+                const result = await this.convertFile(filePath, isPdf ? { pdfPages: options?.pdfPages } : undefined);
                 results.push(result);
 
             } catch (error) {
@@ -679,6 +704,89 @@ export class ConversionService {
         }
 
         return results;
+    }
+
+    async convertFilesMerged(filePaths: string[]): Promise<ConversionResult> {
+        const startTime = Date.now();
+        try {
+            const supportedFiles = filePaths.filter(path => ConversionService.isFileSupported(path));
+            if (supportedFiles.length === 0) {
+                new Notice("没有支持的文件", 3000);
+                return {
+                    markdown: "",
+                    sourcePath: "",
+                    outputPath: "",
+                    provider: this.settings.currentModel || "unknown",
+                    duration: 0,
+                    success: false,
+                    error: "没有支持的文件"
+                };
+            }
+
+            const pdfFiles = supportedFiles.filter(path => FileProcessor.getFileMimeType(path) === "application/pdf");
+            if (pdfFiles.length > 0) {
+                new Notice("合并仅支持图片文件，PDF请单独转换", 4000);
+                return {
+                    markdown: "",
+                    sourcePath: pdfFiles[0],
+                    outputPath: "",
+                    provider: this.settings.currentModel || "unknown",
+                    duration: 0,
+                    success: false,
+                    error: "合并仅支持图片文件"
+                };
+            }
+
+            const fileDataList = await FileProcessor.processFiles(supportedFiles, this.app);
+            if (fileDataList.length === 0) {
+                new Notice("没有可处理的图片文件", 3000);
+                return {
+                    markdown: "",
+                    sourcePath: "",
+                    outputPath: "",
+                    provider: this.settings.currentModel || "unknown",
+                    duration: 0,
+                    success: false,
+                    error: "没有可处理的图片文件"
+                };
+            }
+
+            const prompt = this.getConversionPrompt();
+            const conversionResult = await this.aiService.convertImageBatch(fileDataList, prompt);
+            if (!conversionResult.success) {
+                return {
+                    ...conversionResult,
+                    outputPath: ""
+                };
+            }
+
+            const baseName = fileDataList[0].name.replace(/\.[^/.]+$/, "");
+            const mergedName = `${baseName}-merged.${this.settings.outputSettings.outputExtension}`;
+            const outputFileData: FileData = { ...fileDataList[0], name: mergedName };
+            const outputPath = await this.saveConversionResult(
+                outputFileData,
+                conversionResult.markdown,
+                this.extractSuggestedFilename(conversionResult.markdown)
+            );
+
+            return {
+                ...conversionResult,
+                outputPath,
+                sourcePath: fileDataList[0].path,
+                duration: Date.now() - startTime
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return {
+                markdown: "",
+                sourcePath: "",
+                outputPath: "",
+                provider: this.settings.currentModel || "unknown",
+                duration: Date.now() - startTime,
+                success: false,
+                error: errorMessage
+            };
+        }
     }
 
     /**

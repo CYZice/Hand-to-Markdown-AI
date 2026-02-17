@@ -5,6 +5,7 @@ import { ConversionService } from "./conversion-service";
 import { DEFAULT_SETTINGS } from "./defaults";
 import { AIService } from "./services/ai-service";
 import type { PluginSettings } from "./types";
+import { ConfirmConversionModal } from "./ui/confirm-modal";
 import { SimpleSettingsTab } from "./ui/simple-settings-tab";
 import { PDFProcessor } from "./utils/pdf-processor";
 
@@ -136,7 +137,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
         }
 
         if (target instanceof TFolder) {
-            await this.convertFolder(target.path);
+            this.openConfirmModalForSelection({ mode: "folder", folderPath: target.path });
             return;
         }
 
@@ -172,7 +173,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
 
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile && ConversionService.isFileSupported(activeFile.path)) {
-            await this.convertFile(activeFile.path);
+            this.openConfirmModalForSelection({ mode: "file", filePath: activeFile.path });
             return;
         }
 
@@ -203,7 +204,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
             }
         }
 
-        await this.convertFile(file.path);
+        this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
     }
 
     /**
@@ -560,26 +561,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
             this.openSettings();
             return;
         }
-
-        const files: string[] = [];
-        const root = this.app.vault.getAbstractFileByPath(folderPath);
-        const walk = (node: TAbstractFile | null) => {
-            if (!node) return;
-            if (node instanceof TFile) {
-                if (ConversionService.isFileSupported(node.path)) files.push(node.path);
-            } else if (node instanceof TFolder) {
-                node.children.forEach(ch => walk(ch));
-            }
-        };
-        walk(root);
-
-        if (files.length === 0) {
-            new Notice("该文件夹内没有可转换的文件", 3000);
-            return;
-        }
-
-        new Notice(`开始批量转换，共 ${files.length} 个文件...`, 3000);
-        await this.convertFiles(files);
+        this.openConfirmModalForSelection({ mode: "folder", folderPath });
     }
 
     /**
@@ -587,7 +569,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
      * 
      * @param filePath 文件路径
      */
-    async convertFile(filePath: string) {
+    async convertFile(filePath: string, options?: { pdfPages?: number[] }) {
         // 验证配置
         if (!this.conversionService.validateConfig()) {
             new Notice("请先在设置中配置AI提供商", 5000);
@@ -596,7 +578,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
         }
 
         // 执行转换
-        const result = await this.conversionService.convertFile(filePath);
+        const result = await this.conversionService.convertFile(filePath, options);
 
         if (result.success) {
             new Notice(`转换成功！文件已保存到: ${result.outputPath}`, 5000);
@@ -610,7 +592,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
      * 
      * @param filePaths 文件路径数组
      */
-    async convertFiles(filePaths: string[]) {
+    async convertFiles(filePaths: string[], options?: { pdfPages?: number[] }) {
         // 验证配置
         if (!this.conversionService.validateConfig()) {
             new Notice("请先在设置中配置AI提供商", 5000);
@@ -637,7 +619,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
         const results = await this.conversionService.convertFiles(supportedFiles, ({ current, total, message }) => {
             batch.updateProgress(current);
             batch.setStatus(`${message} (${current}/${total})`);
-        });
+        }, options);
 
         batch.close();
 
@@ -649,6 +631,50 @@ export default class HandMarkdownAIPlugin extends Plugin {
             `批量转换完成！成功: ${successCount}, 失败: ${failCount}`,
             5000
         );
+    }
+
+    async convertFilesMerged(filePaths: string[]) {
+        if (!this.conversionService.validateConfig()) {
+            new Notice("请先在设置中配置AI提供商", 5000);
+            this.openSettings();
+            return;
+        }
+
+        const result = await this.conversionService.convertFilesMerged(filePaths);
+        if (result.success) {
+            new Notice(`合并转换成功！文件已保存到: ${result.outputPath}`, 5000);
+        } else if (result.error) {
+            new Notice(`合并转换失败: ${result.error}`, 5000);
+        }
+    }
+
+    async confirmAndConvertSelection(filePaths: string[], merge: boolean) {
+        this.openConfirmModalForSelection({
+            mode: merge ? "merge" : "files",
+            filePaths
+        });
+    }
+
+    private openConfirmModalForSelection(options: { mode: "file" | "files" | "folder" | "merge"; filePath?: string; filePaths?: string[]; folderPath?: string; }) {
+        const modal = new ConfirmConversionModal(this.app, {
+            mode: options.mode,
+            filePath: options.filePath,
+            filePaths: options.filePaths,
+            folderPath: options.folderPath,
+            settings: this.settings,
+            onConfirm: async ({ filePaths, pdfPages }) => {
+                if (options.mode === "merge") {
+                    await this.convertFilesMerged(filePaths);
+                    return;
+                }
+                if (options.mode === "file") {
+                    await this.convertFile(filePaths[0], { pdfPages });
+                    return;
+                }
+                await this.convertFiles(filePaths, { pdfPages });
+            }
+        });
+        modal.open();
     }
 
     /**
