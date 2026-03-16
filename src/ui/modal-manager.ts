@@ -1,16 +1,16 @@
 import { App, Modal, Notice } from "obsidian";
 import { MODEL_CATEGORIES } from "../constants";
-import type HandMarkdownAIPlugin from "../main";
+import type Ink2VaultPlugin from "../main";
 import type { ModelCategory } from "../types";
 
 /**
  * 模态框管理器 - 处理供应商和模型配置
  */
 export class ModalManager {
-    private plugin: HandMarkdownAIPlugin;
+    private plugin: Ink2VaultPlugin;
     private app: App;
 
-    constructor(plugin: HandMarkdownAIPlugin) {
+    constructor(plugin: Ink2VaultPlugin) {
         this.plugin = plugin;
         this.app = plugin.app;
     }

@@ -9,7 +9,7 @@ import { ConfirmConversionModal } from "./ui/confirm-modal";
 import { SimpleSettingsTab } from "./ui/simple-settings-tab";
 import { PDFProcessor } from "./utils/pdf-processor";
 
-export default class HandMarkdownAIPlugin extends Plugin {
+export default class Ink2VaultPlugin extends Plugin {
     settings: PluginSettings;
     conversionService: ConversionService;
     aiService: AIService;
@@ -96,7 +96,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
                     provider.apiKey = `secret:${secretId}`;
                     hasChanges = true;
                 } catch (e) {
-                    console.error(`[HandMarkdownAI] Failed to migrate API key for ${providerId} to Keychain:`, e);
+                    console.error(`[Ink2Vault] Failed to migrate API key for ${providerId} to Keychain:`, e);
                 }
             }
         }
@@ -601,7 +601,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
         });
 
         new class FolderSuggest extends FuzzySuggestModal<TFolder> {
-            constructor(private plugin: HandMarkdownAIPlugin, private items: TFolder[]) {
+            constructor(private plugin: Ink2VaultPlugin, private items: TFolder[]) {
                 super(plugin.app);
                 this.setPlaceholder("选择一个文件夹进行批量转换...");
             }

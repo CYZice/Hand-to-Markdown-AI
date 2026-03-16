@@ -1,7 +1,7 @@
 import { App, FuzzySuggestModal, Modal, Notice, PluginSettingTab, Setting, TAbstractFile, TFolder, requestUrl, type RequestUrlParam } from "obsidian";
 import { MODEL_CATEGORIES, PROVIDER_TYPES } from "../constants";
 import { DEFAULT_CONVERSION_PROMPT } from "../defaults";
-import type HandMarkdownAIPlugin from "../main";
+import type Ink2VaultPlugin from "../main";
 import type { APIModelConfig, ModelCategory } from "../types";
 
 class ModelInputSuggest {
@@ -89,9 +89,9 @@ class ModelInputSuggest {
  * 简化版设置界面 - 只保留核心必要设置
  */
 export class SimpleSettingsTab extends PluginSettingTab {
-    plugin: HandMarkdownAIPlugin;
+    plugin: Ink2VaultPlugin;
 
-    constructor(app: App, plugin: HandMarkdownAIPlugin) {
+    constructor(app: App, plugin: Ink2VaultPlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }

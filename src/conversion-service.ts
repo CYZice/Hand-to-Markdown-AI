@@ -393,7 +393,7 @@ export class ConversionService {
 
             // 6. 添加元数据注释但不在 Markdown 内容中显示进度信息
             const finalContent = await this.app.vault.read(outputFile!);
-            const metadataComment = `<!-- HandMarkdownAI: ${JSON.stringify({ sourcePath: filePath, totalPages, failedPages })} -->`;
+            const metadataComment = `<!-- Ink2Vault: ${JSON.stringify({ sourcePath: filePath, totalPages, failedPages })} -->`;
             await this.app.vault.modify(outputFile!, finalContent + (finalContent.endsWith('\n') ? '' : '\n') + metadataComment);
 
             // 根据失败页展示完成后操作按钮，否则关闭模态
@@ -470,7 +470,7 @@ export class ConversionService {
 
         let sourcePath: string | null = null;
         // 优先解析末尾 JSON 注释元数据
-        const metaMatch = content.match(/<!--\s*HandMarkdownAI:\s*(\{[\s\S]*?\})\s*-->/);
+        const metaMatch = content.match(/<!--\s*Ink2Vault:\s*(\{[\s\S]*?\})\s*-->/);
         if (metaMatch) {
             try {
                 const obj = JSON.parse(metaMatch[1]);

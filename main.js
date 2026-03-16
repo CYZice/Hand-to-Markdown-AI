@@ -600,7 +600,7 @@ var init_batch_progress_modal = __esm({
 // src/main.ts
 var main_exports = {};
 __export(main_exports, {
-  default: () => HandMarkdownAIPlugin
+  default: () => Ink2VaultPlugin
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian11 = require("obsidian");
@@ -2166,7 +2166,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
         await tryFlushWrites();
       }
       const finalContent = await this.app.vault.read(outputFile);
-      const metadataComment = `<!-- HandMarkdownAI: ${JSON.stringify({ sourcePath: filePath, totalPages, failedPages })} -->`;
+      const metadataComment = `<!-- Ink2Vault: ${JSON.stringify({ sourcePath: filePath, totalPages, failedPages })} -->`;
       await this.app.vault.modify(outputFile, finalContent + (finalContent.endsWith("\n") ? "" : "\n") + metadataComment);
       if (failedPages.length > 0 && progressModal) {
         progressModal.setStatus(`\u90E8\u5206\u9875\u9762\u5931\u8D25\uFF1A\u7B2C ${failedPages.join(", ")} \u9875\u3002\u53EF\u9009\u62E9\u91CD\u8BD5\u3002`);
@@ -2233,7 +2233,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
       return { sourcePath: null, failedPages: [], totalPages: null };
     const content = await this.app.vault.read(file);
     let sourcePath = null;
-    const metaMatch = content.match(/<!--\s*HandMarkdownAI:\s*(\{[\s\S]*?\})\s*-->/);
+    const metaMatch = content.match(/<!--\s*Ink2Vault:\s*(\{[\s\S]*?\})\s*-->/);
     if (metaMatch) {
       try {
         const obj = JSON.parse(metaMatch[1]);
@@ -4322,7 +4322,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
 };
 
 // src/main.ts
-var HandMarkdownAIPlugin = class extends import_obsidian11.Plugin {
+var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
   settings;
   conversionService;
   aiService;
@@ -4386,7 +4386,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian11.Plugin {
           provider.apiKey = `secret:${secretId}`;
           hasChanges = true;
         } catch (e) {
-          console.error(`[HandMarkdownAI] Failed to migrate API key for ${providerId} to Keychain:`, e);
+          console.error(`[Ink2Vault] Failed to migrate API key for ${providerId} to Keychain:`, e);
         }
       }
     }

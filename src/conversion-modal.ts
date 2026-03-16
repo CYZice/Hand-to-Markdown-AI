@@ -1,19 +1,19 @@
 import { App, Modal, Notice, TFile, TFolder } from "obsidian";
 import { ConversionService } from "./conversion-service";
-import HandMarkdownAIPlugin from "./main";
+import Ink2VaultPlugin from "./main";
 
 /**
  * 文件转换对话框
  * 允许用户选择要转换的文件
  */
 export class ConversionModal extends Modal {
-    private plugin: HandMarkdownAIPlugin;
+    private plugin: Ink2VaultPlugin;
     private selectedFiles: TFile[] = [];
     private fileCheckboxes: Map<string, HTMLInputElement> = new Map();
     private folderCheckboxes: Map<string, HTMLInputElement> = new Map();
     private mergeSelected = false;
 
-    constructor(app: App, plugin: HandMarkdownAIPlugin) {
+    constructor(app: App, plugin: Ink2VaultPlugin) {
         super(app);
         this.plugin = plugin;
     }
