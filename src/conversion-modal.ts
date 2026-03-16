@@ -22,7 +22,7 @@ export class ConversionModal extends Modal {
         const { contentEl } = this;
 
         contentEl.empty();
-        contentEl.addClass("hand-markdown-ai-modal");
+        contentEl.addClass("ink2vault-modal");
 
         // 标题
         contentEl.createEl("h2", {

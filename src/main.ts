@@ -15,7 +15,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
     aiService: AIService;
 
     async onload() {
-        console.log("加载 Hand Markdown AI 插件");
+        console.log("加载 Ink2Vault 插件");
 
         await this.loadSettings();
 
@@ -37,11 +37,11 @@ export default class HandMarkdownAIPlugin extends Plugin {
 
         // 根据需求移除 Ribbon 图标点击入口
 
-        console.log("Hand Markdown AI 插件加载完成");
+        console.log("Ink2Vault 插件加载完成");
     }
 
     onunload() {
-        console.log("卸载 Hand Markdown AI 插件");
+        console.log("卸载 Ink2Vault 插件");
     }
 
     async loadSettings() {
@@ -84,7 +84,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
             const provider = this.settings.providers[providerId];
             if (provider.apiKey && !provider.apiKey.startsWith("secret:")) {
                 try {
-                    const secretId = `hand-markdown-ai-api-key-${providerId}`;
+                    const secretId = `ink2vault-api-key-${providerId}`;
                     const keyToSave = provider.apiKey.trim();
 
                     if (typeof secretStorage.save === "function") {
@@ -753,7 +753,7 @@ export default class HandMarkdownAIPlugin extends Plugin {
             anyApp?.setting?.open?.();
             anyApp?.setting?.openTabById?.(this.manifest.id);
         } catch {
-            new Notice("请在设置中找到 Hand Markdown AI 插件进行配置", 5000);
+            new Notice("请在设置中找到 Ink2Vault 插件进行配置", 5000);
         }
     }
 

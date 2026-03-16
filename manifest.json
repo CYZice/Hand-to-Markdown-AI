@@ -1,6 +1,6 @@
 {
-	"id": "hand-markdown-ai",
-	"name": "Hand-Markdown-AI",
+	"id": "ink2vault",
+	"name": "Ink2Vault",
 	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
 	"description": "将手写笔记（PDF/JPG/PNG）转换为Markdown格式，支持多种AI提供商",

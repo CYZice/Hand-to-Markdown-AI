@@ -8,7 +8,7 @@ export class BatchProgressModal extends Modal {
 
     constructor(app: App) {
         super(app);
-        this.modalEl.addClass("hand-markdown-ai-batch-progress");
+        this.modalEl.addClass("ink2vault-batch-progress");
         this.titleEl.setText("批量转换进度");
     }
 

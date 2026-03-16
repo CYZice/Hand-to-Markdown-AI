@@ -99,7 +99,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
-        containerEl.addClass("hand-markdown-ai-settings");
+        containerEl.addClass("ink2vault-settings");
 
         this.ensureCurrentModelValid();
 
@@ -121,7 +121,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
     }
 
     private addHeader(containerEl: HTMLElement) {
-        containerEl.createEl("h2", { text: "Hand Markdown AI" });
+        containerEl.createEl("h2", { text: "Ink2Vault" });
         containerEl.createEl("p", {
             text: "将 PDF 和手写笔记转换为 Markdown 格式",
             attr: { style: "color: var(--text-muted); margin-bottom: 20px;" }
@@ -416,7 +416,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
 
             if (apiKey) {
                 if (useKeychain && hasSecretStorage) {
-                    const secretId = `hand-markdown-ai-api-key-${id}`;
+                    const secretId = `ink2vault-api-key-${id}`;
                     try {
                         if (typeof secretStorage.save === "function") {
                             await secretStorage.save(secretId, apiKey);
@@ -559,7 +559,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
             }
             else if (apiKey && !apiKey.startsWith("secret:")) {
                 if (useKeychain && hasSecretStorage) {
-                    const secretId = `hand-markdown-ai-api-key-${providerId}`;
+                    const secretId = `ink2vault-api-key-${providerId}`;
                     try {
                         if (typeof secretStorage.save === "function") {
                             await secretStorage.save(secretId, apiKey);
@@ -1135,7 +1135,7 @@ export class SimpleSettingsTab extends PluginSettingTab {
 
         // 版本信息
         containerEl.createEl("p", {
-            text: "Hand Markdown AI v1.0.0",
+            text: "Ink2Vault v1.0.0",
             attr: { style: "text-align: center; color: var(--text-muted); margin-top: 20px; font-size: 0.85em;" }
         });
     }

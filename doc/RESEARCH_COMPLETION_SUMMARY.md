@@ -14,37 +14,37 @@
 ## 📚 已生成的文档清单
 
 ### 1️⃣ **README_RESEARCH_DOCS.md** （导航索引）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：快速导航、推荐阅读路径、常见问题
 - ⏱️ 阅读时间：5 分钟
 - 🎯 用途：了解其他文档的结构和选择
 
 ### 2️⃣ **COMPLETE_RESEARCH_SUMMARY.md** （完整总结）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：问题诊断、方案对比、架构设计、集成计划、性能基准
 - ⏱️ 阅读时间：20-30 分钟
 - 🎯 用途：全面理解问题和解决方案
 
 ### 3️⃣ **PDF_IMPLEMENTATION_GUIDE.md** （实现指南）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：5 个详细步骤、完整代码、修改清单、测试建议
 - ⏱️ 阅读时间：按步骤执行 3-4 小时
 - 🎯 用途：开发人员的实战指南，复制即用
 
 ### 4️⃣ **PDF_MEMORY_MANAGEMENT_GUIDE.md** （内存优化深度指南）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：内存原理、7 个优化法则、常见错误、性能数据、配置建议
 - ⏱️ 阅读时间：30-40 分钟
 - 🎯 用途：深度理解优化细节和调试
 
 ### 5️⃣ **PDF_PROCESSING_RESEARCH.md** （技术调研）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：Obsidian 生态方案、pdfjs-dist 官方用法、Worker 配置、参考资源
 - ⏱️ 阅读时间：30-40 分钟
 - 🎯 用途：学术研究和深层理解
 
 ### 6️⃣ **VISUAL_ARCHITECTURE.md** （可视化设计）
-- 📍 位置：Hand-Markdown-AI 目录
+- 📍 位置：Ink2Vault 目录
 - 📋 内容：ASCII 图表、流程图、对比表、时间线、内存分布
 - ⏱️ 阅读时间：15-20 分钟
 - 🎯 用途：直观理解架构和流程
@@ -387,6 +387,6 @@
 ---
 
 **文档生成时间**：2026-01-01
-**针对项目**：Hand-Markdown-AI (Obsidian 插件)
+**针对项目**：Ink2Vault (Obsidian 插件)
 **调研深度**：⭐⭐⭐⭐⭐
 **实用程度**：⭐⭐⭐⭐⭐

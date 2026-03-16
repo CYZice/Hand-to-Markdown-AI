@@ -1,4 +1,4 @@
-# Hand-Markdown-AI PDF 处理实现指南
+# Ink2Vault PDF 处理实现指南
 
 ## 核心架构图
 
@@ -509,7 +509,7 @@ export class ConversionService {
 import { PDFProcessor } from "./utils/pdf-processor";
 
 async onload() {
-    console.log("加载 Hand Markdown AI 插件");
+    console.log("加载 Ink2Vault 插件");
 
     // 初始化 PDF 处理器
     PDFProcessor.initWorker();

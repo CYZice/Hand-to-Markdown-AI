@@ -1,6 +1,6 @@
-# Hand Markdown AI Workspace Instructions
+# Ink2Vault Workspace Instructions
 
-Welcome to the Hand Markdown AI project! This is an Obsidian plugin developed in TypeScript that converts handwritten notes (PDF/JPG/PNG/Excalidraw) into Markdown format using multi-provider AI (Gemini, Claude, OpenAI). 
+Welcome to the Ink2Vault project! This is an Obsidian plugin developed in TypeScript that converts handwritten notes (PDF/JPG/PNG/Excalidraw) into Markdown format using multi-provider AI (Gemini, Claude, OpenAI). 
 
 ## 1. Project Overview & Architecture
 

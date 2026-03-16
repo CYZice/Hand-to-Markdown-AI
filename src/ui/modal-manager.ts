@@ -20,7 +20,7 @@ export class ModalManager {
      */
     showProviderConfigModal(providerId: string): void {
         const modal = new Modal(this.app);
-        modal.modalEl.addClass("hand-markdown-ai-modal");
+        modal.modalEl.addClass("ink2vault-modal");
         modal.titleEl.setText(`设置 ${providerId.toUpperCase()} 配置`);
 
         const { contentEl } = modal;
@@ -119,7 +119,7 @@ export class ModalManager {
      */
     showAddProviderModal(): void {
         const modal = new Modal(this.app);
-        modal.modalEl.addClass("hand-markdown-ai-modal");
+        modal.modalEl.addClass("ink2vault-modal");
         modal.titleEl.setText("添加供应商");
 
         const { contentEl } = modal;
@@ -216,7 +216,7 @@ export class ModalManager {
      */
     showEditModelModal(modelId: string): void {
         const modal = new Modal(this.app);
-        modal.modalEl.addClass("hand-markdown-ai-modal");
+        modal.modalEl.addClass("ink2vault-modal");
         modal.titleEl.setText("编辑模型");
 
         const { contentEl } = modal;
@@ -303,7 +303,7 @@ export class ModalManager {
      */
     showAddModelModal(category?: ModelCategory): void {
         const modal = new Modal(this.app);
-        modal.modalEl.addClass("hand-markdown-ai-modal");
+        modal.modalEl.addClass("ink2vault-modal");
         modal.titleEl.setText("添加新模型");
 
         const { contentEl } = modal;

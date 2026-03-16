@@ -1,5 +1,5 @@
 param(
-    [string]$DestinationRoot = "D:\Obsidian\ABCDE\.obsidian\plugins\Hand-Markdown-AI"
+    [string]$DestinationRoot = "D:\Obsidian\ABCDE\.obsidian\plugins\Ink2Vault"
 )
 
 $sourceRoot = Split-Path -Parent $MyInvocation.MyCommand.Path

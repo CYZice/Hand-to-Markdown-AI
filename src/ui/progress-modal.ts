@@ -33,7 +33,7 @@ export class ProgressModal extends Modal {
 
     constructor(app: App) {
         super(app);
-        this.modalEl.addClass("hand-markdown-ai-progress-modal");
+        this.modalEl.addClass("ink2vault-progress-modal");
         this.titleEl.setText("正在转换 PDF → Markdown");
         this.titleElRef = this.titleEl;
     }
@@ -176,7 +176,7 @@ export class ProgressModal extends Modal {
 
         // 创建浮动面板
         this.overlayEl = document.createElement("div");
-        this.overlayEl.className = "hand-markdown-ai-progress-overlay";
+        this.overlayEl.className = "ink2vault-progress-overlay";
         this.overlayEl.setAttr("style",
             "position:fixed; right:16px; bottom:16px; z-index:9999;" +
             "background: var(--background-primary); box-shadow: var(--shadow-s);" +

@@ -1,4 +1,4 @@
-# Hand-Markdown-AI Excalidraw 处理功能分析
+# Ink2Vault Excalidraw 处理功能分析
 
 ## 一、当前系统处理 Markdown 内图片的完整流程
 

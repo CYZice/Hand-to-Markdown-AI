@@ -1,4 +1,4 @@
-# 📚 Hand-Markdown-AI PDF 处理调研文档导航
+# 📚 Ink2Vault PDF 处理调研文档导航
 
 ## 快速导航
 
@@ -21,7 +21,7 @@
 - 为什么选择 pdfjs-dist（vs 其他方案）
 - 为什么会 OOM（内存问题分析）
 - 整体架构和流程图
-- 与 Hand-Markdown-AI 的集成方案
+- 与 Ink2Vault 的集成方案
 
 ---
 
@@ -80,7 +80,7 @@
 ## 文档结构总览
 
 ```
-📁 Hand-Markdown-AI/
+📁 Ink2Vault/
 ├── 📄 COMPLETE_RESEARCH_SUMMARY.md
 │   └── 执行摘要 → 方案对比 → 架构设计 → 集成计划
 │
@@ -149,7 +149,7 @@
 ---
 
 ### Q6: 需要改多少现有代码？
-👉 [COMPLETE_RESEARCH_SUMMARY.md - 七、与 Hand-Markdown-AI 的具体集成](COMPLETE_RESEARCH_SUMMARY.md)
+👉 [COMPLETE_RESEARCH_SUMMARY.md - 七、与 Ink2Vault 的具体集成](COMPLETE_RESEARCH_SUMMARY.md)
 
 **简答**：仅需 350 行新增/修改代码，3-4 小时完成。
 
@@ -228,7 +228,7 @@
 
 - **生成时间**：2026-01-01
 - **版本**：1.0
-- **针对项目**：Hand-Markdown-AI (Obsidian 插件)
+- **针对项目**：Ink2Vault (Obsidian 插件)
 - **主题**：PDF 流式分页处理和内存优化
 
 ---

@@ -286,7 +286,7 @@ class PDFProcessor {
 
 ---
 
-## 六、与 Hand-Markdown-AI 的集成策略
+## 六、与 Ink2Vault 的集成策略
 
 ### 修改要点
 

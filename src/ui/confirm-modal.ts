@@ -60,7 +60,7 @@ export class ConfirmConversionModal extends Modal {
             outputExtension: s.outputExtension || "md",
             autoOpen: !!s.autoOpen
         };
-        this.modalEl.addClass("hand-markdown-ai-modal");
+        this.modalEl.addClass("ink2vault-modal");
         this.titleEl.setText("确认转换");
     }
 

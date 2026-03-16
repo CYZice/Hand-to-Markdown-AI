@@ -77,22 +77,22 @@
 }
 
 /**
- * Hand Markdown AI 插件样式
+ * Ink2Vault 插件样式
  */
 
 /* 模态框样式 */
-.hand-markdown-ai-modal {
+.ink2vault-modal {
     max-width: 600px;
     max-height: 80vh;
 }
 
-.hand-markdown-ai-modal .modal-title {
+.ink2vault-modal .modal-title {
     text-align: center;
     margin-bottom: 0.5rem;
     color: var(--text-normal);
 }
 
-.hand-markdown-ai-modal .modal-description {
+.ink2vault-modal .modal-description {
     text-align: center;
     color: var(--text-muted);
     margin-bottom: 1.5rem;
@@ -100,7 +100,7 @@
 }
 
 /* 无文件消息 */
-.hand-markdown-ai-modal .no-files-message {
+.ink2vault-modal .no-files-message {
     text-align: center;
     padding: 2rem;
     color: var(--text-muted);
@@ -110,7 +110,7 @@
 }
 
 /* 文件列表容器 */
-.hand-markdown-ai-modal .file-list-container {
+.ink2vault-modal .file-list-container {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid var(--background-modifier-border);
@@ -120,7 +120,7 @@
 }
 
 /* 全选容器 */
-.hand-markdown-ai-modal .select-all-container {
+.ink2vault-modal .select-all-container {
     display: flex;
     align-items: center;
     padding: 0.5rem;
@@ -131,25 +131,25 @@
     z-index: 1;
 }
 
-.hand-markdown-ai-modal .select-all-checkbox {
+.ink2vault-modal .select-all-checkbox {
     margin-right: 0.5rem;
     cursor: pointer;
 }
 
-.hand-markdown-ai-modal .select-all-label {
+.ink2vault-modal .select-all-label {
     cursor: pointer;
     font-weight: 500;
     color: var(--text-normal);
 }
 
 /* 文件列表 */
-.hand-markdown-ai-modal .file-list {
+.ink2vault-modal .file-list {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.hand-markdown-ai-modal .file-item {
+.ink2vault-modal .file-item {
     display: flex;
     align-items: center;
     padding: 0.5rem;
@@ -157,17 +157,17 @@
     transition: background-color 0.2s;
 }
 
-.hand-markdown-ai-modal .file-item:hover {
+.ink2vault-modal .file-item:hover {
     background: var(--background-modifier-hover);
 }
 
-.hand-markdown-ai-modal .file-checkbox {
+.ink2vault-modal .file-checkbox {
     margin-right: 0.75rem;
     cursor: pointer;
     flex-shrink: 0;
 }
 
-.hand-markdown-ai-modal .file-name {
+.ink2vault-modal .file-name {
     flex: 1;
     font-size: 0.9rem;
     color: var(--text-normal);
@@ -177,7 +177,7 @@
     cursor: pointer;
 }
 
-.hand-markdown-ai-modal .file-size {
+.ink2vault-modal .file-size {
     font-size: 0.8rem;
     color: var(--text-muted);
     margin-left: 1rem;
@@ -185,7 +185,7 @@
 }
 
 /* 统计信息 */
-.hand-markdown-ai-modal .file-stats {
+.ink2vault-modal .file-stats {
     text-align: center;
     padding: 0.75rem;
     background: var(--background-secondary);
@@ -196,14 +196,14 @@
 }
 
 /* 按钮容器 */
-.hand-markdown-ai-modal .modal-button-container {
+.ink2vault-modal .modal-button-container {
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 1rem;
 }
 
-.hand-markdown-ai-modal .modal-button-container button {
+.ink2vault-modal .modal-button-container button {
     padding: 0.5rem 1.5rem;
     border-radius: 6px;
     font-size: 0.9rem;
@@ -211,47 +211,47 @@
     transition: all 0.2s;
 }
 
-.hand-markdown-ai-modal .modal-button-container button:hover {
+.ink2vault-modal .modal-button-container button:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* 滚动条样式 */
-.hand-markdown-ai-modal .file-list-container::-webkit-scrollbar {
+.ink2vault-modal .file-list-container::-webkit-scrollbar {
     width: 8px;
 }
 
-.hand-markdown-ai-modal .file-list-container::-webkit-scrollbar-track {
+.ink2vault-modal .file-list-container::-webkit-scrollbar-track {
     background: var(--background-secondary);
     border-radius: 4px;
 }
 
-.hand-markdown-ai-modal .file-list-container::-webkit-scrollbar-thumb {
+.ink2vault-modal .file-list-container::-webkit-scrollbar-thumb {
     background: var(--text-muted);
     border-radius: 4px;
 }
 
-.hand-markdown-ai-modal .file-list-container::-webkit-scrollbar-thumb:hover {
+.ink2vault-modal .file-list-container::-webkit-scrollbar-thumb:hover {
     background: var(--text-normal);
 }
 
 /* 设置页面样式 */
-.hand-markdown-ai-settings .setting-item {
+.ink2vault-settings .setting-item {
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.hand-markdown-ai-settings .setting-item:last-child {
+.ink2vault-settings .setting-item:last-child {
     border-bottom: none;
 }
 
-.hand-markdown-ai-settings h3 {
+.ink2vault-settings h3 {
     margin-top: 1.5rem;
     margin-bottom: 1rem;
     color: var(--text-accent);
     font-size: 1.1rem;
 }
 
-.hand-markdown-ai-settings h4 {
+.ink2vault-settings h4 {
     margin-top: 1rem;
     margin-bottom: 0.75rem;
     color: var(--text-normal);
@@ -260,7 +260,7 @@
 }
 
 /* API Key 输入框样式 */
-.hand-markdown-ai-settings input[type="text"].setting-input-text {
+.ink2vault-settings input[type="text"].setting-input-text {
     font-family: monospace;
     font-size: 0.85rem;
 }
@@ -285,15 +285,15 @@
 
 /* 响应式设计 */
 @media (max-width: 600px) {
-    .hand-markdown-ai-modal {
+    .ink2vault-modal {
         max-width: 95vw;
     }
 
-    .hand-markdown-ai-modal .file-list-container {
+    .ink2vault-modal .file-list-container {
         max-height: 300px;
     }
 
-    .hand-markdown-ai-modal .file-size {
+    .ink2vault-modal .file-size {
         display: none;
     }
 }
@@ -546,16 +546,16 @@
 }
 
 /* 模态框样式增强 - 保持原有逻辑但优化视觉 */
-.hand-markdown-ai-modal .modal-container .modal-content {
+.ink2vault-modal .modal-container .modal-content {
     background: var(--background-primary);
     border-radius: 12px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--background-modifier-border);
 }
 
-.hand-markdown-ai-modal .form-input,
-.hand-markdown-ai-modal .form-select,
-.hand-markdown-ai-modal .form-textarea {
+.ink2vault-modal .form-input,
+.ink2vault-modal .form-select,
+.ink2vault-modal .form-textarea {
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     color: var(--text-normal);
@@ -563,9 +563,9 @@
     transition: all 0.2s;
 }
 
-.hand-markdown-ai-modal .form-input:focus,
-.hand-markdown-ai-modal .form-select:focus,
-.hand-markdown-ai-modal .form-textarea:focus {
+.ink2vault-modal .form-input:focus,
+.ink2vault-modal .form-select:focus,
+.ink2vault-modal .form-textarea:focus {
     border-color: var(--interactive-accent);
     box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.15);
 }

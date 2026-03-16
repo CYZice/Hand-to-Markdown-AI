@@ -432,7 +432,7 @@ ConversionService
 ### 文件修改影响图
 
 ```
-Hand-Markdown-AI
+Ink2Vault
 │
 ├── 📄 src/main.ts
 │   └─ 修改：添加 PDFProcessor.initWorker() 【2 行】

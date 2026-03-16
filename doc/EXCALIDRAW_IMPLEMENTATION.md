@@ -3,7 +3,7 @@
 ## 一、前置条件
 
 - ✅ Node.js 和 npm 已安装
-- ✅ Hand-Markdown-AI 项目已设置
+- ✅ Ink2Vault 项目已设置
 - ✅ 熟悉 TypeScript 和 Obsidian 插件开发
 
 ## 二、实施步骤
@@ -11,7 +11,7 @@
 ### 步骤 1：安装 Excalidraw 依赖
 
 ```bash
-cd /path/to/Hand-Markdown-AI
+cd /path/to/Ink2Vault
 npm install @zsviczian/excalidraw
 ```
 

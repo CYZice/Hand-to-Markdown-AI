@@ -44,7 +44,7 @@
 
 ---
 
-## 二、与 Hand-Markdown-AI 的集成方案
+## 二、与 Ink2Vault 的集成方案
 
 ### 完整处理流程
 
@@ -152,7 +152,7 @@ Excalidraw 处理（简单）
 ## 五、依赖关系图
 
 ```
-Hand-Markdown-AI
+Ink2Vault
 │
 ├─ obsidian (已有)
 │  └─ TFile, App, Notice 等
@@ -186,7 +186,7 @@ Hand-Markdown-AI
 ### 需要修改的文件（共 4 个）
 
 ```
-Hand-Markdown-AI/
+Ink2Vault/
 │
 ├─ package.json
 │  └─ 添加 "@zsviczian/excalidraw" 依赖

@@ -564,7 +564,7 @@ var init_batch_progress_modal = __esm({
       total = 0;
       constructor(app) {
         super(app);
-        this.modalEl.addClass("hand-markdown-ai-batch-progress");
+        this.modalEl.addClass("ink2vault-batch-progress");
         this.titleEl.setText("\u6279\u91CF\u8F6C\u6362\u8FDB\u5EA6");
       }
       onOpen() {
@@ -1497,7 +1497,7 @@ var ProgressModal = class extends import_obsidian3.Modal {
   currentStatus = "\u521D\u59CB\u5316...";
   constructor(app) {
     super(app);
-    this.modalEl.addClass("hand-markdown-ai-progress-modal");
+    this.modalEl.addClass("ink2vault-progress-modal");
     this.titleEl.setText("\u6B63\u5728\u8F6C\u6362 PDF \u2192 Markdown");
     this.titleElRef = this.titleEl;
   }
@@ -1629,7 +1629,7 @@ var ProgressModal = class extends import_obsidian3.Modal {
     } catch (_) {
     }
     this.overlayEl = document.createElement("div");
-    this.overlayEl.className = "hand-markdown-ai-progress-overlay";
+    this.overlayEl.className = "ink2vault-progress-overlay";
     this.overlayEl.setAttr(
       "style",
       "position:fixed; right:16px; bottom:16px; z-index:9999;background: var(--background-primary); box-shadow: var(--shadow-s);border: 1px solid var(--background-modifier-border); border-radius: 8px;padding: 10px; width: 280px;"
@@ -2635,7 +2635,7 @@ var ConversionModal = class extends import_obsidian6.Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.addClass("hand-markdown-ai-modal");
+    contentEl.addClass("ink2vault-modal");
     contentEl.createEl("h2", {
       text: "\u8F6C\u6362\u624B\u5199\u7B14\u8BB0",
       cls: "modal-title"
@@ -2926,7 +2926,7 @@ var ConfirmConversionModal = class extends import_obsidian8.Modal {
       outputExtension: s.outputExtension || "md",
       autoOpen: !!s.autoOpen
     };
-    this.modalEl.addClass("hand-markdown-ai-modal");
+    this.modalEl.addClass("ink2vault-modal");
     this.titleEl.setText("\u786E\u8BA4\u8F6C\u6362");
   }
   async onOpen() {
@@ -3469,7 +3469,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.addClass("hand-markdown-ai-settings");
+    containerEl.addClass("ink2vault-settings");
     this.ensureCurrentModelValid();
     this.addHeader(containerEl);
     this.addProviderSection(containerEl);
@@ -3481,7 +3481,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
     this.addFooter(containerEl);
   }
   addHeader(containerEl) {
-    containerEl.createEl("h2", { text: "Hand Markdown AI" });
+    containerEl.createEl("h2", { text: "Ink2Vault" });
     containerEl.createEl("p", {
       text: "\u5C06 PDF \u548C\u624B\u5199\u7B14\u8BB0\u8F6C\u6362\u4E3A Markdown \u683C\u5F0F",
       attr: { style: "color: var(--text-muted); margin-bottom: 20px;" }
@@ -3714,7 +3714,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
       };
       if (apiKey) {
         if (useKeychain && hasSecretStorage) {
-          const secretId = `hand-markdown-ai-api-key-${id}`;
+          const secretId = `ink2vault-api-key-${id}`;
           try {
             if (typeof secretStorage.save === "function") {
               await secretStorage.save(secretId, apiKey);
@@ -3822,7 +3822,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
         this.plugin.settings.providers[providerId].apiKey = apiKey;
       } else if (apiKey && !apiKey.startsWith("secret:")) {
         if (useKeychain && hasSecretStorage) {
-          const secretId = `hand-markdown-ai-api-key-${providerId}`;
+          const secretId = `ink2vault-api-key-${providerId}`;
           try {
             if (typeof secretStorage.save === "function") {
               await secretStorage.save(secretId, apiKey);
@@ -4246,7 +4246,7 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
     });
     resetBtn.onclick = () => this.resetSettings();
     containerEl.createEl("p", {
-      text: "Hand Markdown AI v1.0.0",
+      text: "Ink2Vault v1.0.0",
       attr: { style: "text-align: center; color: var(--text-muted); margin-top: 20px; font-size: 0.85em;" }
     });
   }
@@ -4327,7 +4327,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian11.Plugin {
   conversionService;
   aiService;
   async onload() {
-    console.log("\u52A0\u8F7D Hand Markdown AI \u63D2\u4EF6");
+    console.log("\u52A0\u8F7D Ink2Vault \u63D2\u4EF6");
     await this.loadSettings();
     PDFProcessor.initWorker();
     this.aiService = new AIService(this.settings, this.app);
@@ -4337,10 +4337,10 @@ var HandMarkdownAIPlugin = class extends import_obsidian11.Plugin {
     this.registerContextMenu();
     this.registerEditorLinkContextMenu();
     this.registerPreviewImageContextMenu();
-    console.log("Hand Markdown AI \u63D2\u4EF6\u52A0\u8F7D\u5B8C\u6210");
+    console.log("Ink2Vault \u63D2\u4EF6\u52A0\u8F7D\u5B8C\u6210");
   }
   onunload() {
-    console.log("\u5378\u8F7D Hand Markdown AI \u63D2\u4EF6");
+    console.log("\u5378\u8F7D Ink2Vault \u63D2\u4EF6");
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -4376,7 +4376,7 @@ var HandMarkdownAIPlugin = class extends import_obsidian11.Plugin {
       const provider = this.settings.providers[providerId];
       if (provider.apiKey && !provider.apiKey.startsWith("secret:")) {
         try {
-          const secretId = `hand-markdown-ai-api-key-${providerId}`;
+          const secretId = `ink2vault-api-key-${providerId}`;
           const keyToSave = provider.apiKey.trim();
           if (typeof secretStorage.save === "function") {
             await secretStorage.save(secretId, keyToSave);
@@ -4941,7 +4941,7 @@ ${processedMarkdown}
       anyApp?.setting?.open?.();
       anyApp?.setting?.openTabById?.(this.manifest.id);
     } catch {
-      new import_obsidian11.Notice("\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u627E\u5230 Hand Markdown AI \u63D2\u4EF6\u8FDB\u884C\u914D\u7F6E", 5e3);
+      new import_obsidian11.Notice("\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u627E\u5230 Ink2Vault \u63D2\u4EF6\u8FDB\u884C\u914D\u7F6E", 5e3);
     }
   }
   toggleModel() {

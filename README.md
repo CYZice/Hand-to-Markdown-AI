@@ -1,4 +1,4 @@
-<h1 align="center">Hand Markdown AI</h1>
+<h1 align="center">Ink2Vault</h1>
 
 <p align="center"><b>Obsidian 手写笔记与多格式图像的智能 Markdown 转换插件</b></p>
 
@@ -7,17 +7,17 @@
 </p>
 
 <p align="center">
-<a href="https://github.com/CYZice/Hand-to-Markdown-AI/stargazers">
-<img src="https://img.shields.io/github/stars/CYZice/Hand-to-Markdown-AI?style=flat-square&color=6c5ce7" alt="GitHub Stars">
+<a href="https://github.com/CYZice/Ink2Vault/stargazers">
+<img src="https://img.shields.io/github/stars/CYZice/Ink2Vault?style=flat-square&color=6c5ce7" alt="GitHub Stars">
 </a>
-<a href="https://github.com/CYZice/Hand-to-Markdown-AI/releases/latest">
-<img src="https://img.shields.io/github/v/release/CYZice/Hand-to-Markdown-AI?style=flat-square&color=00b894" alt="Latest Release">
+<a href="https://github.com/CYZice/Ink2Vault/releases/latest">
+<img src="https://img.shields.io/github/v/release/CYZice/Ink2Vault?style=flat-square&color=00b894" alt="Latest Release">
 </a>
-<a href="https://github.com/CYZice/Hand-to-Markdown-AI/releases">
-<img src="https://img.shields.io/github/downloads/CYZice/Hand-to-Markdown-AI/total?style=flat-square&color=0984e3" alt="Downloads">
+<a href="https://github.com/CYZice/Ink2Vault/releases">
+<img src="https://img.shields.io/github/downloads/CYZice/Ink2Vault/total?style=flat-square&color=0984e3" alt="Downloads">
 </a>
-<a href="https://github.com/CYZice/Hand-to-Markdown-AI/blob/main/LICENSE">
-<img src="https://img.shields.io/github/license/CYZice/Hand-to-Markdown-AI?style=flat-square&color=636e72" alt="License">
+<a href="https://github.com/CYZice/Ink2Vault/blob/main/LICENSE">
+<img src="https://img.shields.io/github/license/CYZice/Ink2Vault?style=flat-square&color=636e72" alt="License">
 </a>
 </p>
 
@@ -80,9 +80,9 @@
 * **OpenAI**: [OpenAI Platform](https://platform.openai.com/)
 
 ### 安装步骤 (手动发布版本)
-1. 前往本仓库 [Releases](https://github.com/CYZice/Hand-to-Markdown-AI/releases) 页面，下载最新的 `main.js`, `manifest.json`, 以及 `styles.css` 文件。
-2. 在您的 Obsidian 笔记目录中创建：`<vault>/.obsidian/plugins/Hand-Markdown-AI/`
-3. 塞入这三个文件后，在 Obsidian 设置 -> 第三方插件 -> 启用 "Hand Markdown AI"。
+1. 前往本仓库 [Releases](https://github.com/CYZice/Ink2Vault/releases) 页面，下载最新的 `main.js`, `manifest.json`, 以及 `styles.css` 文件。
+2. 在您的 Obsidian 笔记目录中创建：`<vault>/.obsidian/plugins/Ink2Vault/`
+3. 塞入这三个文件后，在 Obsidian 设置 -> 第三方插件 -> 启用 "Ink2Vault"。
 4. 进到插件配置页维护您的 API 信息，直接开启您的生产力魔法！
 
 ---
@@ -117,7 +117,7 @@ npm version patch # or minor, major
 此增强套件使用 [MIT License](LICENSE) 证书开源发布。
 
 <p align="center">
-<a href="https://github.com/CYZice/Hand-to-Markdown-AI/issues" target="_blank">
+<a href="https://github.com/CYZice/Ink2Vault/issues" target="_blank">
 <img src="https://img.shields.io/badge/提交意见-Issue-red?style=for-the-badge" alt="Issues">
 </a>
 </p>

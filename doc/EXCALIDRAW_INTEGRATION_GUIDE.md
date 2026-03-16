@@ -173,13 +173,13 @@ interface ExcalidrawScene {
 
 ---
 
-## 二、复用到 Hand-Markdown-AI 的方案
+## 二、复用到 Ink2Vault 的方案
 
 ### 方案 A：直接复用 Excalidraw 库（推荐）
 
 #### 步骤 1：安装依赖
 
-在 Hand-Markdown-AI 的 `package.json` 中添加：
+在 Ink2Vault 的 `package.json` 中添加：
 
 ```json
 {
@@ -480,7 +480,7 @@ obsidian-excalidraw-plugin/src/
 
 ### 1. 依赖冲突检查
 
-如果 Hand-Markdown-AI 已经使用 Excalidraw，检查版本兼容性：
+如果 Ink2Vault 已经使用 Excalidraw，检查版本兼容性：
 
 ```typescript
 // 在 main.ts 中

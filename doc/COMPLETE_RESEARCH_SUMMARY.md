@@ -30,7 +30,7 @@
 ### 调查方法
 
 通过以下方式收集信息：
-1. 分析现有 Hand-Markdown-AI、Markdown-Next-AI、noted.md 三个项目的架构
+1. 分析现有 Ink2Vault、Markdown-Next-AI、noted.md 三个项目的架构
 2. 查阅 Mozilla PDF.js 官方文档和 GitHub Wiki
 3. 调研 Obsidian 插件生态中的 PDF 处理实践
 
@@ -103,7 +103,7 @@ for (let i = 1; i <= pdf.numPages; i++) {
 
 ### 问题诊断
 
-当前 Hand-Markdown-AI 为什么会 OOM：
+当前 Ink2Vault 为什么会 OOM：
 
 ```typescript
 // 原来的逻辑（伪代码）
@@ -427,7 +427,7 @@ async onload() {
 
 ---
 
-## 七、与 Hand-Markdown-AI 的具体集成
+## 七、与 Ink2Vault 的具体集成
 
 ### 需要创建的新文件
 
