@@ -26,6 +26,44 @@ export class ConversionService {
         return this.settings.conversionPrompt || DEFAULT_CONVERSION_PROMPT;
     }
 
+    private sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    private isRetryableConversionError(message: string): boolean {
+        return /429|quota|rate|network|timeout|频率|配额|超时|网络/i.test(message);
+    }
+
+    private async convertImageBatchWithRetry(
+        files: FileData[],
+        prompt: string,
+        pageNumbers?: number[]
+    ): Promise<ConversionResult> {
+        const retryAttempts = this.settings.advancedSettings?.retryAttempts ?? 2;
+        const retryBaseDelayMs = 1200;
+        let attempt = 0;
+        let lastErr: Error | null = null;
+
+        while (attempt <= retryAttempts) {
+            const res = await this.aiService.convertImageBatch(files, prompt, pageNumbers);
+            if (res.success !== false) {
+                return res;
+            }
+
+            const errMessage = res.error || "AI 转换失败";
+            lastErr = new Error(errMessage);
+            if (!this.isRetryableConversionError(errMessage) || attempt === retryAttempts) {
+                throw lastErr;
+            }
+
+            const delay = retryBaseDelayMs * Math.pow(2, attempt);
+            await this.sleep(delay);
+            attempt++;
+        }
+
+        throw lastErr || new Error("AI 转换失败");
+    }
+
     async convertFile(filePath: string, options?: { pdfPages?: number[] }): Promise<ConversionResult> {
         const startTime = Date.now();
 
@@ -119,8 +157,6 @@ export class ConversionService {
 
         // 并发与重试参数（可根据需要调整或未来搬到设置）
         const CONCURRENCY_LIMIT = this.settings.advancedSettings?.concurrencyLimit ?? 2;
-        const RETRY_ATTEMPTS = this.settings.advancedSettings?.retryAttempts ?? 2;
-        const RETRY_BASE_DELAY_MS = 1200;
 
         let progressModal: ProgressModal | null = null;
 
@@ -204,43 +240,6 @@ export class ConversionService {
             let writing = false;
             let renderedCount = 0;
 
-            const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-            const retryConvertImageBatch = async (
-                files: FileData[],
-                prompt: string,
-                pageNumbers?: number[],
-            ): Promise<import("./types").ConversionResult> => {
-                let attempt = 0;
-                let lastErr: any = null;
-                while (attempt <= RETRY_ATTEMPTS) {
-                    try {
-                        const res = await this.aiService.convertImageBatch(files, prompt, pageNumbers);
-                        return res;
-                    } catch (err: any) {
-                        lastErr = err;
-                        // 针对 429/网络错误做指数退避
-                        const msg = err?.message || String(err);
-                        const isRateOrNetwork = /429|quota|rate|network|timeout/i.test(msg);
-                        if (!isRateOrNetwork || attempt === RETRY_ATTEMPTS) {
-                            break;
-                        }
-                        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-                        await sleep(delay);
-                        attempt++;
-                    }
-                }
-                return {
-                    markdown: "",
-                    sourcePath: files[0]?.path || "",
-                    outputPath: "",
-                    provider: this.settings.currentModel || "unknown",
-                    duration: 0,
-                    success: false,
-                    error: lastErr?.message || String(lastErr)
-                };
-            };
-
             const tryFlushWrites = async () => {
                 if (writing) return;
                 writing = true;
@@ -285,7 +284,7 @@ export class ConversionService {
                     activeJobs++;
                     (async () => {
                         try {
-                            const res = await retryConvertImageBatch(job.images, prompt, job.pages);
+                            const res = await this.convertImageBatchWithRetry(job.images, prompt, job.pages);
                             jobResults.set(job.id, { result: res, job });
                             await tryFlushWrites();
                         } catch (e) {
@@ -387,7 +386,7 @@ export class ConversionService {
 
             // 等待所有批次完成与写入
             while (activeJobs > 0 || jobQueue.length > 0 || jobResults.has(nextWriteId)) {
-                await sleep(100);
+                await this.sleep(100);
                 await tryFlushWrites();
             }
 
@@ -497,7 +496,7 @@ export class ConversionService {
         }
 
         // 也从错误块中提取页号
-        const errorBlocks = content.match(/> \[!ERROR\] 第\s+(\d+)\s+页渲染失败/gi) || [];
+        const errorBlocks = content.match(/> \[!ERROR\] 第\s+(\d+)\s+页(?:渲染|转换)失败/gi) || [];
         errorBlocks.forEach(b => {
             const m = b.match(/第\s+(\d+)\s+页/);
             if (m) {
@@ -565,7 +564,7 @@ export class ConversionService {
                     isPdf: true
                 };
 
-                const res = await this.aiService.convertImageBatch([pageFileData], prompt, [pageNum]);
+                const res = await this.convertImageBatchWithRetry([pageFileData], prompt, [pageNum]);
                 const of = this.app.vault.getAbstractFileByPath(outputPath) as TFile;
                 const current = await this.app.vault.read(of);
 
@@ -632,7 +631,7 @@ export class ConversionService {
                 isPdf: true
             };
 
-            const res = await this.aiService.convertImageBatch([pageFileData], prompt, [pageNum]);
+            const res = await this.convertImageBatchWithRetry([pageFileData], prompt, [pageNum]);
             const of = this.app.vault.getAbstractFileByPath(outputPath) as TFile;
             const current = await this.app.vault.read(of);
 

@@ -1870,6 +1870,33 @@ var ConversionService = class {
   getConversionPrompt() {
     return this.settings.conversionPrompt || DEFAULT_CONVERSION_PROMPT;
   }
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  isRetryableConversionError(message) {
+    return /429|quota|rate|network|timeout|频率|配额|超时|网络/i.test(message);
+  }
+  async convertImageBatchWithRetry(files, prompt2, pageNumbers) {
+    const retryAttempts = this.settings.advancedSettings?.retryAttempts ?? 2;
+    const retryBaseDelayMs = 1200;
+    let attempt = 0;
+    let lastErr = null;
+    while (attempt <= retryAttempts) {
+      const res = await this.aiService.convertImageBatch(files, prompt2, pageNumbers);
+      if (res.success !== false) {
+        return res;
+      }
+      const errMessage = res.error || "AI \u8F6C\u6362\u5931\u8D25";
+      lastErr = new Error(errMessage);
+      if (!this.isRetryableConversionError(errMessage) || attempt === retryAttempts) {
+        throw lastErr;
+      }
+      const delay = retryBaseDelayMs * Math.pow(2, attempt);
+      await this.sleep(delay);
+      attempt++;
+    }
+    throw lastErr || new Error("AI \u8F6C\u6362\u5931\u8D25");
+  }
   async convertFile(filePath, options) {
     const startTime = Date.now();
     let progressModal = null;
@@ -1943,8 +1970,6 @@ var ConversionService = class {
     let outputFile = null;
     let outputPath = "";
     const CONCURRENCY_LIMIT = this.settings.advancedSettings?.concurrencyLimit ?? 2;
-    const RETRY_ATTEMPTS = this.settings.advancedSettings?.retryAttempts ?? 2;
-    const RETRY_BASE_DELAY_MS = 1200;
     let progressModal = null;
     try {
       const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -1998,36 +2023,6 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
       let nextWriteId = 1;
       let writing = false;
       let renderedCount = 0;
-      const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const retryConvertImageBatch = async (files, prompt3, pageNumbers) => {
-        let attempt = 0;
-        let lastErr = null;
-        while (attempt <= RETRY_ATTEMPTS) {
-          try {
-            const res = await this.aiService.convertImageBatch(files, prompt3, pageNumbers);
-            return res;
-          } catch (err) {
-            lastErr = err;
-            const msg = err?.message || String(err);
-            const isRateOrNetwork = /429|quota|rate|network|timeout/i.test(msg);
-            if (!isRateOrNetwork || attempt === RETRY_ATTEMPTS) {
-              break;
-            }
-            const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
-            await sleep(delay);
-            attempt++;
-          }
-        }
-        return {
-          markdown: "",
-          sourcePath: files[0]?.path || "",
-          outputPath: "",
-          provider: this.settings.currentModel || "unknown",
-          duration: 0,
-          success: false,
-          error: lastErr?.message || String(lastErr)
-        };
-      };
       const tryFlushWrites = async () => {
         if (writing)
           return;
@@ -2068,7 +2063,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
           activeJobs++;
           (async () => {
             try {
-              const res = await retryConvertImageBatch(job.images, prompt2, job.pages);
+              const res = await this.convertImageBatchWithRetry(job.images, prompt2, job.pages);
               jobResults.set(job.id, { result: res, job });
               await tryFlushWrites();
             } catch (e) {
@@ -2162,7 +2157,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
         }
       );
       while (activeJobs > 0 || jobQueue.length > 0 || jobResults.has(nextWriteId)) {
-        await sleep(100);
+        await this.sleep(100);
         await tryFlushWrites();
       }
       const finalContent = await this.app.vault.read(outputFile);
@@ -2257,7 +2252,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
           failedPages.push(n);
       });
     }
-    const errorBlocks = content.match(/> \[!ERROR\] 第\s+(\d+)\s+页渲染失败/gi) || [];
+    const errorBlocks = content.match(/> \[!ERROR\] 第\s+(\d+)\s+页(?:渲染|转换)失败/gi) || [];
     errorBlocks.forEach((b) => {
       const m = b.match(/第\s+(\d+)\s+页/);
       if (m) {
@@ -2314,7 +2309,7 @@ ${this.settings.outputSettings.contentAfterTitle ? "\n" + this.settings.outputSe
           size: base64.length,
           isPdf: true
         };
-        const res = await this.aiService.convertImageBatch([pageFileData], prompt2, [pageNum]);
+        const res = await this.convertImageBatchWithRetry([pageFileData], prompt2, [pageNum]);
         const of = this.app.vault.getAbstractFileByPath(outputPath);
         const current = await this.app.vault.read(of);
         const errorRegexExact = new RegExp(`>? \\[!ERROR\\] \u7B2C ${pageNum} \u9875(?:\u6E32\u67D3|\u8F6C\u6362)\u5931\u8D25: [^\\n]*\\n?`);
@@ -2374,7 +2369,7 @@ ${res.markdown}`;
         size: base64.length,
         isPdf: true
       };
-      const res = await this.aiService.convertImageBatch([pageFileData], prompt2, [pageNum]);
+      const res = await this.convertImageBatchWithRetry([pageFileData], prompt2, [pageNum]);
       const of = this.app.vault.getAbstractFileByPath(outputPath);
       const current = await this.app.vault.read(of);
       const errorRegexExact = new RegExp(`>? \\[!ERROR\\] \u7B2C ${pageNum} \u9875(?:\u6E32\u67D3|\u8F6C\u6362)\u5931\u8D25: [^\\n]*\\n?`);
