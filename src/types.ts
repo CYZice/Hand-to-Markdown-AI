@@ -98,6 +98,7 @@ export interface OutputSettings {
     contentAfterTitle?: string; // 标题下方插入的自定义内容
     insertPageSeparator?: boolean;
     removePageHeadings?: boolean;
+    inlineImageConversionMode?: "insert" | "replace";
 }
 
 export interface AdvancedSettings {

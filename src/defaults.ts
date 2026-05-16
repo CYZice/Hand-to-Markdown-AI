@@ -58,7 +58,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         autoOpen: true,
         contentAfterTitle: "", // 默认为空，不插入任何内容
         insertPageSeparator: false,
-        removePageHeadings: false
+        removePageHeadings: false,
+        inlineImageConversionMode: "insert"
     },
 
     advancedSettings: {

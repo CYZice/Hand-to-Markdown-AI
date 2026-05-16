@@ -9,6 +9,9 @@ import { ConfirmConversionModal } from "./ui/confirm-modal";
 import { SimpleSettingsTab } from "./ui/simple-settings-tab";
 import { PDFProcessor } from "./utils/pdf-processor";
 
+type InlineConversionMode = "insert" | "replace";
+type EditorLinkInfo = { path: string; start: number; end: number; format: 'wiki' | 'markdown' };
+
 export default class Ink2VaultPlugin extends Plugin {
     settings: PluginSettings;
     conversionService: ConversionService;
@@ -45,7 +48,10 @@ export default class Ink2VaultPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const loaded = await this.loadData();
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+        this.settings.outputSettings = Object.assign({}, DEFAULT_SETTINGS.outputSettings, loaded?.outputSettings || {});
+        this.settings.advancedSettings = Object.assign({}, DEFAULT_SETTINGS.advancedSettings, loaded?.advancedSettings || {});
         if (this.settings.useKeychain !== false) {
             await this.migrateKeysToKeychain();
         }
@@ -61,6 +67,10 @@ export default class Ink2VaultPlugin extends Plugin {
         if (this.aiService) {
             this.aiService.updateSettings(this.settings);
         }
+    }
+
+    private getInlineConversionMode(): InlineConversionMode {
+        return this.settings.outputSettings.inlineImageConversionMode === "replace" ? "replace" : "insert";
     }
 
     async migrateKeysToKeychain(): Promise<void> {
@@ -207,7 +217,7 @@ export default class Ink2VaultPlugin extends Plugin {
         this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
     }
 
-    private findImageInLine(line: string, sourcePath: string, targetFile: TFile): { path: string; start: number; end: number; format: 'wiki' | 'markdown' } | null {
+    private findImageInLine(line: string, sourcePath: string, targetFile: TFile): EditorLinkInfo | null {
         if (!line.includes("[") && !line.includes("(")) return null;
 
         const indices: number[] = [];
@@ -235,6 +245,20 @@ export default class Ink2VaultPlugin extends Plugin {
         return null;
     }
 
+    private findLinkedFileInEditor(editor: any, sourcePath: string, targetFile: TFile): { linkInfo: EditorLinkInfo; lineNum: number } | null {
+        const lineCount = editor.lineCount();
+        for (let i = 0; i < lineCount; i++) {
+            const line = editor.getLine(i);
+            if (!line.includes("[") && !line.includes("(")) continue;
+
+            const linkInfo = this.findImageInLine(line, sourcePath, targetFile);
+            if (linkInfo) {
+                return { linkInfo, lineNum: i };
+            }
+        }
+        return null;
+    }
+
     private async smartConvertPreviewImage(file: TFile) {
         if (!this.conversionService.validateConfig()) {
             new Notice("请先在设置中配置AI提供商", 5000);
@@ -244,51 +268,57 @@ export default class Ink2VaultPlugin extends Plugin {
 
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView?.editor && activeView.file) {
-            const editor = activeView.editor;
-            const lineCount = editor.lineCount();
-            let foundLine = -1;
-            let foundLinkInfo = null;
-
-            for (let i = 0; i < lineCount; i++) {
-                const line = editor.getLine(i);
-                if (!line.includes("[") && !line.includes("(")) continue;
-
-                const linkInfo = this.findImageInLine(line, activeView.file.path, file);
-                if (linkInfo) {
-                    foundLine = i;
-                    foundLinkInfo = linkInfo;
-                    break;
-                }
-            }
-
-            if (foundLinkInfo && foundLine !== -1) {
-                await this.convertLinkInEditor(foundLinkInfo, editor, activeView, foundLine);
+            const found = this.findLinkedFileInEditor(activeView.editor, activeView.file.path, file);
+            if (found) {
+                await this.convertLinkInEditor(found.linkInfo, activeView.editor, activeView, found.lineNum, this.getInlineConversionMode());
                 return;
             }
         }
 
-        this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
+        new Notice("已识别图片文件，但无法定位当前笔记中的原文链接。请在图片链接文本上右键重试。", 5000);
     }
 
     /**
      * 注册右键菜单
      */
+    private isFileExplorerMenuSource(source: string): boolean {
+        return source === "file-explorer-context-menu" || source.startsWith("file-explorer");
+    }
+
     private registerContextMenu() {
         // 文件浏览器右键菜单（统一处理）
         this.registerEvent(
-            this.app.workspace.on("file-menu", (menu, file) => {
-                if (file instanceof TFile && ConversionService.isFileSupported(file.path)) {
+            this.app.workspace.on("file-menu", (menu, file, source: string) => {
+                const isFileExplorer = this.isFileExplorerMenuSource(source || "");
+
+                if (isFileExplorer && file instanceof TFile && ConversionService.isFileSupported(file.path)) {
                     menu.addItem((item) => {
                         item
-                            .setTitle("转换为Markdown")
+                            .setTitle("转换为新的 Markdown 文件")
                             .setIcon("wand")
-                            .onClick(async () => {
-                                await this.smartConvert(file);
+                            .onClick(() => {
+                                this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
                             });
                     });
                 }
+                if (!isFileExplorer && file instanceof TFile && ConversionService.isFileSupported(file.path)) {
+                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                    const found = activeView?.editor && activeView.file
+                        ? this.findLinkedFileInEditor(activeView.editor, activeView.file.path, file)
+                        : null;
+                    if (found) {
+                        menu.addItem((item) => {
+                            item
+                                .setTitle("转换图片为 Markdown")
+                                .setIcon("wand")
+                                .onClick(async () => {
+                                    await this.convertLinkInEditor(found.linkInfo, activeView!.editor, activeView!, found.lineNum, this.getInlineConversionMode());
+                                });
+                        });
+                    }
+                }
                 // 仅对输出目录中的 Markdown 文件提供重试选项
-                if (file instanceof TFile) {
+                if (isFileExplorer && file instanceof TFile) {
                     const ext = file.extension?.toLowerCase?.() || "";
                     const outExt = this.settings.outputSettings.outputExtension.toLowerCase();
                     const outDir = (this.settings.outputSettings.outputDir || "").replace(/^\/+/, "");
@@ -314,7 +344,7 @@ export default class Ink2VaultPlugin extends Plugin {
                         });
                     }
                 }
-                if (file instanceof TFolder) {
+                if (isFileExplorer && file instanceof TFolder) {
                     menu.addItem((item) => {
                         item
                             .setTitle("转换此文件夹内所有文件")
@@ -354,10 +384,10 @@ export default class Ink2VaultPlugin extends Plugin {
 
                 menu.addItem((item: MenuItem) => {
                     item
-                        .setTitle("转换链接为Markdown并插入下方")
+                        .setTitle("转换图片为 Markdown")
                         .setIcon("wand")
                         .onClick(async () => {
-                            await this.smartConvert();
+                            await this.convertLinkInEditor(linkInfo, editor, view, cursor.line, this.getInlineConversionMode());
                         });
                 });
             })
@@ -369,46 +399,108 @@ export default class Ink2VaultPlugin extends Plugin {
     /**
      * 注册 markdown 预览图片的原生右键菜单（支持所有图片，包括 Excalidraw 导出 PNG）
      */
+    private cleanPossibleVaultPath(rawPath: string): string {
+        const withoutQuery = rawPath.split("?")[0].split("#")[0].trim();
+        try {
+            return decodeURIComponent(withoutQuery);
+        } catch {
+            return withoutQuery;
+        }
+    }
+
+    private getCandidateVaultPaths(rawPath: string): string[] {
+        const clean = this.cleanPossibleVaultPath(rawPath);
+        const candidates = new Set<string>();
+        const add = (path: string) => {
+            const normalized = path.replace(/^\/+/, "");
+            if (normalized) candidates.add(normalized);
+        };
+
+        add(clean);
+
+        if (clean.startsWith("app://local/")) {
+            const localPath = clean.replace("app://local/", "");
+            const parts = localPath.split("/").filter(Boolean);
+            for (let i = 0; i < parts.length; i++) {
+                add(parts.slice(i).join("/"));
+            }
+        }
+
+        return Array.from(candidates);
+    }
+
+    private resolveVaultFileFromRawPath(rawPath: string): TFile | null {
+        const candidates = this.getCandidateVaultPaths(rawPath);
+        for (const candidate of candidates) {
+            const file = this.app.vault.getAbstractFileByPath(candidate);
+            if (file instanceof TFile && ConversionService.isFileSupported(file.path)) {
+                return file;
+            }
+        }
+
+        const lastCandidate = candidates[candidates.length - 1];
+        const fileName = lastCandidate?.split("/").pop();
+        if (!fileName) return null;
+
+        const matches = this.app.vault.getFiles().filter(file =>
+            file.name === fileName && ConversionService.isFileSupported(file.path)
+        );
+        return matches.length === 1 ? matches[0] : null;
+    }
+
+    private getDomAttributePath(el: HTMLElement | null, attrs: string[]): string | null {
+        if (!el) return null;
+        for (const attr of attrs) {
+            const datasetKey = attr.startsWith("data-")
+                ? attr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+                : "";
+            const datasetValue = datasetKey ? (el.dataset as any)?.[datasetKey] : null;
+            const value = datasetValue || el.getAttribute(attr);
+            if (value) return value;
+        }
+        return null;
+    }
+
+    private resolveImageFileFromContextMenuEvent(evt: MouseEvent): TFile | null {
+        const target = evt.target as HTMLElement | null;
+        if (!target) return null;
+
+        const container = target.closest(".markdown-preview-view, .markdown-source-view");
+        if (!container) return null;
+
+        const img = target.closest("img") as HTMLImageElement | null
+            || (target.closest(".internal-embed, .image-embed") as HTMLElement | null)?.querySelector("img")
+            || target.querySelector?.("img") as HTMLImageElement | null;
+        const embed = target.closest(".internal-embed, .image-embed") as HTMLElement | null;
+
+        const rawPaths = [
+            this.getDomAttributePath(img, ["data-href", "data-src", "src", "alt"]),
+            this.getDomAttributePath(embed, ["data-href", "data-src", "src", "alt", "aria-label"])
+        ].filter((path): path is string => !!path);
+
+        for (const rawPath of rawPaths) {
+            const file = this.resolveVaultFileFromRawPath(rawPath);
+            if (file) return file;
+        }
+
+        return null;
+    }
+
     private registerPreviewImageContextMenu() {
         this.registerDomEvent(document, "contextmenu", async (evt: MouseEvent) => {
-            // 只处理 markdown 预览视图或实时预览（Live Preview）视图下的图片
-            const img = evt.target as HTMLImageElement;
-            if (!img || img.tagName !== "IMG") return;
-            const preview = img.closest(".markdown-preview-view") || img.closest(".markdown-source-view");
-            if (!preview) return;
+            const file = this.resolveImageFileFromContextMenuEvent(evt);
+            if (!file) return;
 
-            // 获取 vault 内部图片路径
-            let imgPath = (img as any).dataset?.href || img.getAttribute("src");
-            if (!imgPath) return;
-
-            // 只处理支持的图片类型
-            const supported = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
-            if (!supported.some(ext => imgPath.toLowerCase().endsWith(ext))) return;
-
-            // 兼容 app://local/ 路径
-            let vaultPath = imgPath;
-            if (vaultPath.startsWith("app://local/")) {
-                const parts = vaultPath.replace("app://local/", "").split("/");
-                parts.shift();
-                vaultPath = parts.join("/");
-            }
-
-            // 检查文件是否存在
-            const file = this.app.vault.getAbstractFileByPath(vaultPath);
-            if (file instanceof TFile && ConversionService.isFileSupported(file.path)) {
-                // 阻止默认菜单
-                evt.preventDefault();
-                // 弹出自定义菜单
-                const menu = new Menu();
-                menu.addItem((item: MenuItem) => {
-                    item.setTitle("转换为Markdown")
-                        .setIcon("wand")
-                        .onClick(async () => {
-                            await this.smartConvertPreviewImage(file);
-                        });
-                });
-                menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
-            }
+            evt.preventDefault();
+            const menu = new Menu();
+            menu.addItem((item: MenuItem) => {
+                item.setTitle("转换图片为 Markdown")
+                    .setIcon("wand")
+                    .onClick(async () => {
+                        await this.smartConvertPreviewImage(file);
+                    });
+            });
+            menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
         });
     }
 
@@ -416,7 +508,7 @@ export default class Ink2VaultPlugin extends Plugin {
      * 从光标位置提取文件链接路径
      * 支持 ![[image.png]]、![alt](image.png)、[[file.pdf]] 和 [title](file.pdf) 格式
      */
-    private extractImageAtCursor(line: string, ch: number): { path: string; start: number; end: number; format: 'wiki' | 'markdown' } | null {
+    private extractImageAtCursor(line: string, ch: number): EditorLinkInfo | null {
         // 检测 Wiki 图片链接格式: ![[image.png]]
         const wikiImageRegex = /!\[\[([^\]]+)\]\]/g;
         let match;
@@ -486,10 +578,11 @@ export default class Ink2VaultPlugin extends Plugin {
      * 在编辑器中直接插入到链接下方
      */
     private async convertLinkInEditor(
-        linkInfo: { path: string; start: number; end: number; format: 'wiki' | 'markdown' },
+        linkInfo: EditorLinkInfo,
         editor: any,
         view: any,
-        lineNum: number
+        lineNum: number,
+        mode: InlineConversionMode = this.getInlineConversionMode()
     ) {
         try {
             // 验证配置
@@ -556,11 +649,20 @@ export default class Ink2VaultPlugin extends Plugin {
 
             if (result.success && result.markdown) {
                 const processedMarkdown = ConversionService.postProcessConvertedMarkdown(result.markdown, this.settings);
-                // 在链接下方插入转换结果
-                const insertLine = lineNum + 1;
-                const insertText = `\n${processedMarkdown}\n`;
+                const line = editor.getLine(lineNum);
+                const originalLinkText = line.slice(linkInfo.start, linkInfo.end);
 
-                editor.replaceRange(insertText, { line: insertLine, ch: 0 });
+                if (mode === "replace") {
+                    if (line.trim() === originalLinkText.trim()) {
+                        editor.replaceRange(processedMarkdown, { line: lineNum, ch: 0 }, { line: lineNum, ch: line.length });
+                    } else {
+                        editor.replaceRange(processedMarkdown, { line: lineNum, ch: linkInfo.start }, { line: lineNum, ch: linkInfo.end });
+                    }
+                } else {
+                    const insertLine = lineNum + 1;
+                    const insertText = `\n${processedMarkdown}\n`;
+                    editor.replaceRange(insertText, { line: insertLine, ch: 0 });
+                }
 
                 new Notice("转换成功！", 3000);
             } else {

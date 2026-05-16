@@ -117,7 +117,8 @@ var init_defaults = __esm({
         contentAfterTitle: "",
         // 默认为空，不插入任何内容
         insertPageSeparator: false,
-        removePageHeadings: false
+        removePageHeadings: false,
+        inlineImageConversionMode: "insert"
       },
       advancedSettings: {
         timeout: 3e4,
@@ -4147,6 +4148,12 @@ var SimpleSettingsTab = class extends import_obsidian9.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
+    new import_obsidian9.Setting(containerEl).setName("\u6587\u672C\u4E2D\u56FE\u7247\u8F6C\u6362\u65B9\u5F0F").setDesc("\u5728\u7B14\u8BB0\u6B63\u6587\u4E2D\u53F3\u952E\u56FE\u7247\u8F6C\u6362\u65F6\uFF0C\u9009\u62E9\u63D2\u5165\u5230\u56FE\u7247\u4E0B\u65B9\u6216\u66FF\u6362\u539F\u56FE\u7247\u94FE\u63A5").addDropdown(
+      (dropdown) => dropdown.addOption("insert", "\u63D2\u5165\u5230\u56FE\u7247\u4E0B\u65B9").addOption("replace", "\u66FF\u6362\u56FE\u7247\u94FE\u63A5").setValue(this.plugin.settings.outputSettings.inlineImageConversionMode || "insert").onChange(async (value) => {
+        this.plugin.settings.outputSettings.inlineImageConversionMode = value === "replace" ? "replace" : "insert";
+        await this.plugin.saveSettings();
+      })
+    );
     new import_obsidian9.Setting(containerEl).setName("\u6807\u9898\u4E0B\u65B9\u63D2\u5165\u5185\u5BB9").setDesc("\u5728 Markdown \u6807\u9898\u4E0B\u65B9\u63D2\u5165\u7684\u81EA\u5B9A\u4E49\u5185\u5BB9\uFF08\u652F\u6301 Markdown \u683C\u5F0F\uFF0C\u7559\u7A7A\u5219\u4E0D\u63D2\u5165\uFF09").addTextArea((text) => {
       text.setPlaceholder("\u4F8B\u5982\uFF1A> \u6765\u81EA PDF \u7684\u8F6C\u6362\u5185\u5BB9\\n\u6216\uFF1A[\u8FD4\u56DE\u76EE\u5F55](#\u76EE\u5F55)").setValue(this.plugin.settings.outputSettings.contentAfterTitle || "").setDisabled(false).onChange(async (value) => {
         this.plugin.settings.outputSettings.contentAfterTitle = value;
@@ -4338,7 +4345,10 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
     console.log("\u5378\u8F7D Ink2Vault \u63D2\u4EF6");
   }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loaded = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+    this.settings.outputSettings = Object.assign({}, DEFAULT_SETTINGS.outputSettings, loaded?.outputSettings || {});
+    this.settings.advancedSettings = Object.assign({}, DEFAULT_SETTINGS.advancedSettings, loaded?.advancedSettings || {});
     if (this.settings.useKeychain !== false) {
       await this.migrateKeysToKeychain();
     }
@@ -4351,6 +4361,9 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
     if (this.aiService) {
       this.aiService.updateSettings(this.settings);
     }
+  }
+  getInlineConversionMode() {
+    return this.settings.outputSettings.inlineImageConversionMode === "replace" ? "replace" : "insert";
   }
   async migrateKeysToKeychain() {
     let secretStorage = this.app.secretStorage;
@@ -4503,6 +4516,19 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
     }
     return null;
   }
+  findLinkedFileInEditor(editor, sourcePath, targetFile) {
+    const lineCount = editor.lineCount();
+    for (let i = 0; i < lineCount; i++) {
+      const line = editor.getLine(i);
+      if (!line.includes("[") && !line.includes("("))
+        continue;
+      const linkInfo = this.findImageInLine(line, sourcePath, targetFile);
+      if (linkInfo) {
+        return { linkInfo, lineNum: i };
+      }
+    }
+    return null;
+  }
   async smartConvertPreviewImage(file) {
     if (!this.conversionService.validateConfig()) {
       new import_obsidian11.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
@@ -4511,42 +4537,43 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
     }
     const activeView = this.app.workspace.getActiveViewOfType(import_obsidian11.MarkdownView);
     if (activeView?.editor && activeView.file) {
-      const editor = activeView.editor;
-      const lineCount = editor.lineCount();
-      let foundLine = -1;
-      let foundLinkInfo = null;
-      for (let i = 0; i < lineCount; i++) {
-        const line = editor.getLine(i);
-        if (!line.includes("[") && !line.includes("("))
-          continue;
-        const linkInfo = this.findImageInLine(line, activeView.file.path, file);
-        if (linkInfo) {
-          foundLine = i;
-          foundLinkInfo = linkInfo;
-          break;
-        }
-      }
-      if (foundLinkInfo && foundLine !== -1) {
-        await this.convertLinkInEditor(foundLinkInfo, editor, activeView, foundLine);
+      const found = this.findLinkedFileInEditor(activeView.editor, activeView.file.path, file);
+      if (found) {
+        await this.convertLinkInEditor(found.linkInfo, activeView.editor, activeView, found.lineNum, this.getInlineConversionMode());
         return;
       }
     }
-    this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
+    new import_obsidian11.Notice("\u5DF2\u8BC6\u522B\u56FE\u7247\u6587\u4EF6\uFF0C\u4F46\u65E0\u6CD5\u5B9A\u4F4D\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u539F\u6587\u94FE\u63A5\u3002\u8BF7\u5728\u56FE\u7247\u94FE\u63A5\u6587\u672C\u4E0A\u53F3\u952E\u91CD\u8BD5\u3002", 5e3);
   }
   /**
    * 注册右键菜单
    */
+  isFileExplorerMenuSource(source) {
+    return source === "file-explorer-context-menu" || source.startsWith("file-explorer");
+  }
   registerContextMenu() {
     this.registerEvent(
-      this.app.workspace.on("file-menu", (menu, file) => {
-        if (file instanceof import_obsidian11.TFile && ConversionService.isFileSupported(file.path)) {
+      this.app.workspace.on("file-menu", (menu, file, source) => {
+        const isFileExplorer = this.isFileExplorerMenuSource(source || "");
+        if (isFileExplorer && file instanceof import_obsidian11.TFile && ConversionService.isFileSupported(file.path)) {
           menu.addItem((item) => {
-            item.setTitle("\u8F6C\u6362\u4E3AMarkdown").setIcon("wand").onClick(async () => {
-              await this.smartConvert(file);
+            item.setTitle("\u8F6C\u6362\u4E3A\u65B0\u7684 Markdown \u6587\u4EF6").setIcon("wand").onClick(() => {
+              this.openConfirmModalForSelection({ mode: "file", filePath: file.path });
             });
           });
         }
-        if (file instanceof import_obsidian11.TFile) {
+        if (!isFileExplorer && file instanceof import_obsidian11.TFile && ConversionService.isFileSupported(file.path)) {
+          const activeView = this.app.workspace.getActiveViewOfType(import_obsidian11.MarkdownView);
+          const found = activeView?.editor && activeView.file ? this.findLinkedFileInEditor(activeView.editor, activeView.file.path, file) : null;
+          if (found) {
+            menu.addItem((item) => {
+              item.setTitle("\u8F6C\u6362\u56FE\u7247\u4E3A Markdown").setIcon("wand").onClick(async () => {
+                await this.convertLinkInEditor(found.linkInfo, activeView.editor, activeView, found.lineNum, this.getInlineConversionMode());
+              });
+            });
+          }
+        }
+        if (isFileExplorer && file instanceof import_obsidian11.TFile) {
           const ext = file.extension?.toLowerCase?.() || "";
           const outExt = this.settings.outputSettings.outputExtension.toLowerCase();
           const outDir = (this.settings.outputSettings.outputDir || "").replace(/^\/+/, "");
@@ -4569,7 +4596,7 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
             });
           }
         }
-        if (file instanceof import_obsidian11.TFolder) {
+        if (isFileExplorer && file instanceof import_obsidian11.TFolder) {
           menu.addItem((item) => {
             item.setTitle("\u8F6C\u6362\u6B64\u6587\u4EF6\u5939\u5185\u6240\u6709\u6587\u4EF6").setIcon("folder").onClick(() => {
               this.smartConvert(file);
@@ -4606,8 +4633,8 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
         if (!ConversionService.isFileSupported(targetFile.path))
           return;
         menu.addItem((item) => {
-          item.setTitle("\u8F6C\u6362\u94FE\u63A5\u4E3AMarkdown\u5E76\u63D2\u5165\u4E0B\u65B9").setIcon("wand").onClick(async () => {
-            await this.smartConvert();
+          item.setTitle("\u8F6C\u6362\u56FE\u7247\u4E3A Markdown").setIcon("wand").onClick(async () => {
+            await this.convertLinkInEditor(linkInfo, editor, view, cursor.line, this.getInlineConversionMode());
           });
         });
       })
@@ -4616,37 +4643,94 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
   /**
    * 注册 markdown 预览图片的原生右键菜单（支持所有图片，包括 Excalidraw 导出 PNG）
    */
+  cleanPossibleVaultPath(rawPath) {
+    const withoutQuery = rawPath.split("?")[0].split("#")[0].trim();
+    try {
+      return decodeURIComponent(withoutQuery);
+    } catch {
+      return withoutQuery;
+    }
+  }
+  getCandidateVaultPaths(rawPath) {
+    const clean = this.cleanPossibleVaultPath(rawPath);
+    const candidates = /* @__PURE__ */ new Set();
+    const add = (path) => {
+      const normalized = path.replace(/^\/+/, "");
+      if (normalized)
+        candidates.add(normalized);
+    };
+    add(clean);
+    if (clean.startsWith("app://local/")) {
+      const localPath = clean.replace("app://local/", "");
+      const parts = localPath.split("/").filter(Boolean);
+      for (let i = 0; i < parts.length; i++) {
+        add(parts.slice(i).join("/"));
+      }
+    }
+    return Array.from(candidates);
+  }
+  resolveVaultFileFromRawPath(rawPath) {
+    const candidates = this.getCandidateVaultPaths(rawPath);
+    for (const candidate of candidates) {
+      const file = this.app.vault.getAbstractFileByPath(candidate);
+      if (file instanceof import_obsidian11.TFile && ConversionService.isFileSupported(file.path)) {
+        return file;
+      }
+    }
+    const lastCandidate = candidates[candidates.length - 1];
+    const fileName = lastCandidate?.split("/").pop();
+    if (!fileName)
+      return null;
+    const matches = this.app.vault.getFiles().filter(
+      (file) => file.name === fileName && ConversionService.isFileSupported(file.path)
+    );
+    return matches.length === 1 ? matches[0] : null;
+  }
+  getDomAttributePath(el, attrs) {
+    if (!el)
+      return null;
+    for (const attr of attrs) {
+      const datasetKey = attr.startsWith("data-") ? attr.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase()) : "";
+      const datasetValue = datasetKey ? el.dataset?.[datasetKey] : null;
+      const value = datasetValue || el.getAttribute(attr);
+      if (value)
+        return value;
+    }
+    return null;
+  }
+  resolveImageFileFromContextMenuEvent(evt) {
+    const target = evt.target;
+    if (!target)
+      return null;
+    const container = target.closest(".markdown-preview-view, .markdown-source-view");
+    if (!container)
+      return null;
+    const img = target.closest("img") || target.closest(".internal-embed, .image-embed")?.querySelector("img") || target.querySelector?.("img");
+    const embed = target.closest(".internal-embed, .image-embed");
+    const rawPaths = [
+      this.getDomAttributePath(img, ["data-href", "data-src", "src", "alt"]),
+      this.getDomAttributePath(embed, ["data-href", "data-src", "src", "alt", "aria-label"])
+    ].filter((path) => !!path);
+    for (const rawPath of rawPaths) {
+      const file = this.resolveVaultFileFromRawPath(rawPath);
+      if (file)
+        return file;
+    }
+    return null;
+  }
   registerPreviewImageContextMenu() {
     this.registerDomEvent(document, "contextmenu", async (evt) => {
-      const img = evt.target;
-      if (!img || img.tagName !== "IMG")
+      const file = this.resolveImageFileFromContextMenuEvent(evt);
+      if (!file)
         return;
-      const preview = img.closest(".markdown-preview-view") || img.closest(".markdown-source-view");
-      if (!preview)
-        return;
-      let imgPath = img.dataset?.href || img.getAttribute("src");
-      if (!imgPath)
-        return;
-      const supported = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"];
-      if (!supported.some((ext) => imgPath.toLowerCase().endsWith(ext)))
-        return;
-      let vaultPath = imgPath;
-      if (vaultPath.startsWith("app://local/")) {
-        const parts = vaultPath.replace("app://local/", "").split("/");
-        parts.shift();
-        vaultPath = parts.join("/");
-      }
-      const file = this.app.vault.getAbstractFileByPath(vaultPath);
-      if (file instanceof import_obsidian11.TFile && ConversionService.isFileSupported(file.path)) {
-        evt.preventDefault();
-        const menu = new import_obsidian11.Menu();
-        menu.addItem((item) => {
-          item.setTitle("\u8F6C\u6362\u4E3AMarkdown").setIcon("wand").onClick(async () => {
-            await this.smartConvertPreviewImage(file);
-          });
+      evt.preventDefault();
+      const menu = new import_obsidian11.Menu();
+      menu.addItem((item) => {
+        item.setTitle("\u8F6C\u6362\u56FE\u7247\u4E3A Markdown").setIcon("wand").onClick(async () => {
+          await this.smartConvertPreviewImage(file);
         });
-        menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
-      }
+      });
+      menu.showAtPosition({ x: evt.clientX, y: evt.clientY });
     });
   }
   /**
@@ -4714,7 +4798,7 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
    * 转换编辑器中的链接文件（图片、PDF、Excalidraw）为Markdown文本
    * 在编辑器中直接插入到链接下方
    */
-  async convertLinkInEditor(linkInfo, editor, view, lineNum) {
+  async convertLinkInEditor(linkInfo, editor, view, lineNum, mode = this.getInlineConversionMode()) {
     try {
       if (!this.conversionService.validateConfig()) {
         new import_obsidian11.Notice("\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6EAI\u63D0\u4F9B\u5546", 5e3);
@@ -4762,11 +4846,21 @@ var Ink2VaultPlugin = class extends import_obsidian11.Plugin {
       const result = await this.aiService.convertFile(fileData, prompt2);
       if (result.success && result.markdown) {
         const processedMarkdown = ConversionService.postProcessConvertedMarkdown(result.markdown, this.settings);
-        const insertLine = lineNum + 1;
-        const insertText = `
+        const line = editor.getLine(lineNum);
+        const originalLinkText = line.slice(linkInfo.start, linkInfo.end);
+        if (mode === "replace") {
+          if (line.trim() === originalLinkText.trim()) {
+            editor.replaceRange(processedMarkdown, { line: lineNum, ch: 0 }, { line: lineNum, ch: line.length });
+          } else {
+            editor.replaceRange(processedMarkdown, { line: lineNum, ch: linkInfo.start }, { line: lineNum, ch: linkInfo.end });
+          }
+        } else {
+          const insertLine = lineNum + 1;
+          const insertText = `
 ${processedMarkdown}
 `;
-        editor.replaceRange(insertText, { line: insertLine, ch: 0 });
+          editor.replaceRange(insertText, { line: insertLine, ch: 0 });
+        }
         new import_obsidian11.Notice("\u8F6C\u6362\u6210\u529F\uFF01", 3e3);
       } else {
         new import_obsidian11.Notice(`\u8F6C\u6362\u5931\u8D25: ${result.error || "\u672A\u77E5\u9519\u8BEF"}`, 5e3);

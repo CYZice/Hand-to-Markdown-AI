@@ -986,6 +986,19 @@ export class SimpleSettingsTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
+            .setName("文本中图片转换方式")
+            .setDesc("在笔记正文中右键图片转换时，选择插入到图片下方或替换原图片链接")
+            .addDropdown(dropdown => dropdown
+                .addOption("insert", "插入到图片下方")
+                .addOption("replace", "替换图片链接")
+                .setValue(this.plugin.settings.outputSettings.inlineImageConversionMode || "insert")
+                .onChange(async (value) => {
+                    this.plugin.settings.outputSettings.inlineImageConversionMode = value === "replace" ? "replace" : "insert";
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
             .setName("标题下方插入内容")
             .setDesc("在 Markdown 标题下方插入的自定义内容（支持 Markdown 格式，留空则不插入）")
             .addTextArea(text => {
